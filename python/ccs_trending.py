@@ -225,8 +225,12 @@ class TrendingPlotter(object):
         plt.title(title)
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1.01),
-                  fontsize=legendfontsize)
+        try:
+            ax.legend(loc='upper left', bbox_to_anchor=(1, 1.01),
+                      fontsize=legendfontsize)
+        except StandardError as eobj:
+            print("StandardError caught in TrendingPlotter.plot:")
+            print(eobj)
         return fig
 
     @staticmethod

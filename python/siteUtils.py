@@ -191,14 +191,14 @@ def pythonDir():
     """
     Return directory containing the python scripts for this package.
     """
-    return os.path.join(os.environ['HARNESSEDJOBSDIR'], 'python')
+    return os.path.join(os.environ['JHCCSUTILSDIR'], 'python')
 
 def configDir():
     """
     Return the full path to the directory containing the site-specific
     configuration files.
     """
-    return os.path.join(os.environ['HARNESSEDJOBSDIR'], 'config', getSiteName())
+    return os.environ['LCATR_CONFIG_DIR']
 
 def datacatalog_query(query, folder=None, site=None):
     from DataCatalog import DataCatalog
