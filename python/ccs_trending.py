@@ -192,8 +192,9 @@ class TrendingPlotter(object):
         header_items = ["date", "time"]
         data = [self.histories.values()[0].x_values]
         for quantity, history in self.histories.items():
-            header_items.extend((quantity, 'error'))
-            data.extend((history.y_values, history.y_errors))
+            if len(history.y_values) == len(data[0]):
+                header_items.extend((quantity, 'error'))
+                data.extend((history.y_values, history.y_errors))
         data = np.array(data).transpose()
         header = ' '.join(header_items)
         np.savetxt(outfile, data, fmt=['%s'] + ['%.4e']*(data.shape[1]-1),
@@ -209,8 +210,10 @@ class TrendingPlotter(object):
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         for quantity, history in self.histories.items():
-            ax.errorbar(mds.date2num(history.x_values), history.y_values,
-                        yerr=history.y_errors, fmt='.', label=quantity)
+            ebar = ax.errorbar(mds.date2num(history.x_values), history.y_values,
+                               yerr=history.y_errors, fmt='.')
+            ax.plot(mds.date2num(history.x_values), history.y_values, '.',
+                    color=ebar[0].get_color(), label=quantity)
         frame = plt.gca()
         frame.xaxis.set_major_formatter(mds.DateFormatter('%y-%m-%d\n%H:%M:%S'))
         ax.tick_params(axis='x', which='major', labelsize='small')
