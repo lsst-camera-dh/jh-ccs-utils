@@ -7,8 +7,7 @@ import shutil
 from collections import OrderedDict
 from PythonBinding import CcsJythonInterpreter
 import siteUtils
-
-_quote = lambda x: "'%s'" % x
+import camera_components
 
 class CcsSetup(OrderedDict):
     """
@@ -25,19 +24,20 @@ class CcsSetup(OrderedDict):
         _read(...) method.
         """
         super(CcsSetup, self).__init__()
-        self['tsCWD'] = _quote(os.getcwd())
-        self['labname'] = _quote(siteUtils.getSiteName())
-        self['jobname'] = _quote(siteUtils.getJobName())
-        self['CCDID'] = _quote(siteUtils.getUnitId())
-        self['UNITID'] = _quote(siteUtils.getUnitId())
-        self['LSSTID'] = _quote(siteUtils.getLSSTId())
+        self.commands = []
+        self['tsCWD'] = os.getcwd()
+        self['labname'] = siteUtils.getSiteName()
+        self['jobname'] = siteUtils.getJobName()
+        self['CCDID'] = siteUtils.getUnitId()
+        self['UNITID'] = siteUtils.getUnitId()
+        self['LSSTID'] = siteUtils.getLSSTId()
         try:
-            self['RUNNUM'] = _quote(siteUtils.getRunNumber())
+            self['RUNNUM'] = siteUtils.getRunNumber()
         except StandardError:
             self['RUNNUM'] = "no_lcatr_run_number"
 
-        self['ts'] = _quote(os.getenv('CCS_TS', default='ts'))
-        self['archon'] = _quote(os.getenv('CCS_ARCHON', default='archon'))
+        self['ts'] = os.getenv('CCS_TS', default='ts')
+        self['archon'] = os.getenv('CCS_ARCHON', default='archon')
 
         # The following are only available for certain contexts.
         if os.environ.has_key('CCS_VAC_OUTLET'):
@@ -49,24 +49,30 @@ class CcsSetup(OrderedDict):
 
         self._read(os.path.join(siteUtils.getJobDir(), configFile))
 
+    def __setitem__(self, key, value):
+        super(CcsSetup, self).__setitem__(key, "'%s'" % str(value))
+
+    def set_item(self, key, value):
+        super(CcsSetup, self).__setitem__(key, value)
+
     def _read(self, configFile):
         if configFile is None:
             return
         configDir = siteUtils.configDir()
         for line in open(configFile):
             key, value = line.strip().split("=")
-            self[key.strip()] = _quote(os.path.realpath(os.path.join(configDir, value.strip())))
+            self[key.strip()] = os.path.realpath(os.path.join(configDir, value.strip()))
 
     def __call__(self):
         """
         Return the setup commands for the CCS script.
         """
+        # Insert path to the modules used by the jython code.
+        self.commands.insert(0, 'sys.path.append("%s")' % siteUtils.pythonDir())
+        self.commands.insert(0, 'import sys')
         # Set the local variables.
-        commands = ['%s = %s' % item for item in self.items()]
-        # Append path to the modules used by the jython code.
-        commands.append('import sys')
-        commands.append('sys.path.append("%s")' % siteUtils.pythonDir())
-        return commands
+        self.commands.extend(['%s = %s' % item for item in self.items()])
+        return self.commands
 
 
 class CcsRaftSetup(CcsSetup):
@@ -76,47 +82,27 @@ class CcsRaftSetup(CcsSetup):
     """
     def __init__(self, configFile):
         super(CcsRaftSetup, self).__init__(configFile)
+        self.commands.append('from collections import namedtuple')
+        self.commands.append("SensorInfo = namedtuple('SensorInfo', 'sensor_id manufacturer_sn'.split())")
+        self.commands.append("ccd_names = dict([(slot, SensorInfo()) for slot in 'S00 S01 S02 S10 S11 S12 S20 S21 S22'.split()])")
         self._get_ccd_names()
     def _get_ccd_names(self):
-        ccdnames = {}
-        ccdmanunames = {}
-        ccdnames, ccdmanunames = siteUtils.getCCDNames()
-#        print "retrieved the following LSST CCD names list"
-#        print ccdnames
-#        print "retrieved the following Manufacturers CCD names list"
-#        print ccdmanunames
-        for slot in ccdnames:
-#            print "CCD %s is in slot %s" % (ccdnames[slot], slot)
-            self['CCD%s' % slot] = _quote(ccdnames[slot])
-        for slot in ccdmanunames:
-#            print "CCD %s is in slot %s" % (ccdmanunames[slot], slot)
-            self['CCDMANU%s' % slot] = _quote(ccdmanunames[slot])
-        CCDTYPE = _quote(siteUtils.getUnitType())
-#        print "CCDTYPE = %s" % CCDTYPE
-        self['sequence_file'] = _quote("NA")
-        self['acffile'] = self['itl_acffile']
-        self['CCSCCDTYPE'] = _quote("ITL")
-        if "RTM" in CCDTYPE.upper() or "ETU" in CCDTYPE.upper():
-            if "e2v" in CCDTYPE:
-                self['CCSCCDTYPE'] = _quote("E2V")
-                self['acffile'] = self['e2v_acffile']
-                self['sequence_file'] = self['e2v_seqfile']
-            else:
-                self['CCSCCDTYPE'] = _quote("ITL")
-                self['acffile'] = self['itl_acffile']
-                self['sequence_file'] = self['itl_seqfile']
-#            print self['sequence_file'], self['tsCWD']
-            shutil.copy2(self['sequence_file'].strip("'"),
-                         self['tsCWD'].strip("'"))
-#            print "The sequence file to be used is %s" % self['sequence_file']
+        raft_id = siteUtils.getUnitId()
+        raft = camera_components.Raft.create_from_etrav(raft_id)
+        for slot in raft.slot_names:
+            sensor = raft.sensor(slot)
+            self.set_item('ccd_names["%s"]' % slot, 'SensorInfo("%s", "%s")'
+                          % (str(sensor.sensor_id), str(sensor.manufacturer_sn)))
+        ccd_type = str(raft.sensor_type.split('-')[0])
+        self['ccd_type'] = ccd_type
+        if ccd_type == 'ITL':
+            self.set_item('sequence_file', self['itl_seqfile'])
+        elif ccd_type == 'E2V':
+            self.set_item('sequence_file', self['e2v_seqfile'])
         else:
-            if "ITL" in CCDTYPE:
-                self['CCSCCDTYPE'] = _quote("ITL")
-                self['acffile'] = self['itl_acffile']
-            if "e2v" in CCDTYPE:
-                self['CCSCCDTYPE'] = _quote("E2V")
-                self['acffile'] = self['e2v_acffile']
- #           print "The acffile to be used is %s" % self['acffile']
+            raise RuntimeError('Invalid ccd_type: %s' % ccd_type)
+        shutil.copy2(self['sequence_file'].strip("'"),
+                     self['tsCWD'].strip("'"))
 
 
 def ccsProducer(jobName, ccsScript, ccs_setup_class=None, verbose=True):
