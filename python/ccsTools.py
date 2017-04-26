@@ -84,7 +84,7 @@ class CcsRaftSetup(CcsSetup):
         super(CcsRaftSetup, self).__init__(configFile)
         self.commands.append('from collections import namedtuple')
         self.commands.append("SensorInfo = namedtuple('SensorInfo', 'sensor_id manufacturer_sn'.split())")
-        self.commands.append("ccd_names = dict([(slot, SensorInfo()) for slot in 'S00 S01 S02 S10 S11 S12 S20 S21 S22'.split()])")
+        self.commands.append("ccd_names = dict([(slot, ()) for slot in 'S00 S01 S02 S10 S11 S12 S20 S21 S22'.split()])")
         self._get_ccd_names()
     def _get_ccd_names(self):
         raft_id = siteUtils.getUnitId()
