@@ -15,6 +15,7 @@ def set_ccd_info(ccs_sub, ccd_names, logger):
         Dictionary of namedtuple containing the CCD .sensor_id and
         .maufacturer_sn information, keyed by slot name.
     logger : logging.Logger
+        Log commands using the logger.info(...) function.
 
     Notes
     -----
@@ -32,29 +33,23 @@ def set_ccd_info(ccs_sub, ccd_names, logger):
 
         # Set the LSST serial number.
         command = 'setLsstSerialNumber %s %s' % (ccd_id, sensor.sensor_id)
-        logger.info(command)
         ccs_sub.ts8.synchCommand(2, command)
 
         # Set the manufacturer serial number.
         command = ('setManufacturerSerialNumber %s %s'
                    % (ccd_id, sensor.manufacturer_sn))
-        logger.info(command)
         ccs_sub.ts8.synchCommand(2, command)
 
         # Set the CCD temperature.
         reb_id = int(slot[1])
         ccd_num = int(slot[2])
         command = "getChannelValue R00.Reb%d.CCDTemp%d" % (reb_id, ccd_num)
-        logger.info(command)
         ccdtemp = ccs_sub.ts8.synchCommand(2, command).getResult()
         command = "setMeasuredCCDTemperature %s %s" % (ccd_id, ccdtemp)
-        logger.info(command)
         ccs_sub.ts8.synchCommand(10, command)
 
         # Set the BSS voltage.
         command = "getChannelValue REB%s.hvbias.VbefSwch"  % reb_id
-        logger.info(command)
         hv = ccs_sub.rebps.synchCommand(10, command).getResult()
         command = "setMeasuredCCDBSS %s %s" % (ccd_id, hv)
-        logger.info(command)
         ccs_sub.ts8.synchCommand(10, command)
