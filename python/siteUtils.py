@@ -198,7 +198,9 @@ def configDir():
     Return the full path to the directory containing the site-specific
     configuration files.
     """
-    return os.environ['LCATR_CONFIG_DIR']
+    hj_config = \
+        os.path.join(os.environ['HARNESSEDJOBSDIR'], 'config', getSiteName())
+    return os.environ.get('LCATR_CONFIG_DIR', hj_config)
 
 def datacatalog_query(query, folder=None, site=None):
     from DataCatalog import DataCatalog
