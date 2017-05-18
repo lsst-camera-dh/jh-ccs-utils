@@ -5,6 +5,7 @@ interpreter.
 import os
 import shutil
 from collections import OrderedDict
+import ConfigParser
 from PythonBinding import CcsJythonInterpreter
 import siteUtils
 import camera_components
@@ -125,3 +126,33 @@ def ccsProducer(jobName, ccsScript, ccs_setup_class=None, verbose=True):
     if result.thread.java_exceptions:
         raise RuntimeError("java.lang.Exceptions raised:\n%s"
                            % '\n'.join(result.thread.java_exceptions))
+
+def ccs_subsystem_mapping(config_file=None, section='ccs_subsystems'):
+    """
+    Function to find the mapping of abstracted to concrete CCS subsystem
+    names for use by jython scripts inside of harnessed jobs.
+
+    Parameters
+    ----------
+    config_file : str, optional
+         The configuration file containing the mapping.  If None (default),
+         then the file pointed to by the LCATR_CCS_SUBSYSTEM_CONFIG
+         environment variable is used.  If that is not set, then None
+         is returned.
+    section : str, optional
+         The section of the config file that contains the mapping.
+         Default:  'ccs_subsystems'.
+
+    Returns
+    -------
+    dict : A dictionary containing the mapping.
+    """
+    if config_file is None:
+        if os.environ.has_key('LCATR_CCS_SUBSYSTEM_CONFIG'):
+            config_file = os.environ['LCATR_CCS_SUBSYSTEM_CONFIG']
+        else:
+            return None
+    parser = ConfigParser.ConfigParser()
+    parser.optionxform = str
+    parser.read(config_file)
+    return dict(parser.items(section))
