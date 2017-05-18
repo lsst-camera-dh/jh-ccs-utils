@@ -54,6 +54,7 @@ class CcsSetup(OrderedDict):
         super(CcsSetup, self).__setitem__(key, "'%s'" % str(value))
 
     def set_item(self, key, value):
+        "Use the OrderedDict.__setitem__ for values that don't need quotes."
         super(CcsSetup, self).__setitem__(key, value)
 
     def _read(self, configFile):
@@ -73,10 +74,13 @@ class CcsSetup(OrderedDict):
         self.commands.insert(0, 'import sys')
         # Set the local variables.
         self.commands.extend(['%s = %s' % item for item in self.items()])
+        # Create the CCS subsystems mapping object.
+        self.commands.extend(CcsSetup.set_ccs_subsystems())
         return self.commands
 
     @staticmethod
     def set_ccs_subsystems():
+        "Return the setup commands for the CCS subsystem mapppings."
         mapping = ccs_subsystem_mapping()
         if mapping is None:
             return ['subsystems = None']
