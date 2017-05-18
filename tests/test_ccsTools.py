@@ -46,5 +46,24 @@ class CcsSubsystemMappingTestCase(unittest.TestCase):
         self.assertEqual(mapping['mono'], 'ts/Monochromator')
         self.assertEqual(mapping['rebps'], 'ccs-rebps')
 
+    def test_CcsSetup_set_ccs_subsystems(self):
+        "Test the CcsSetup.set_ccs_subsystems function."
+        os.environ['LCATR_CCS_SUBSYSTEM_CONFIG'] = self.config_file
+        commands = ccsTools.CcsSetup.set_ccs_subsystems()
+        expected_commands = """subsystems = OrderedDict()
+subsystems['ts8'] = 'ts8'
+subsystems['ts'] = 'ts'
+subsystems['pd'] = 'ts/PhotoDiode'
+subsystems['mono'] = 'ts/Monochromator'
+subsystems['rebps'] = 'ccs-rebps'
+""".split('\n')
+        for expected, actual in zip(expected_commands, commands):
+            self.assertEqual(expected, actual)
+
+        del os.environ['LCATR_CCS_SUBSYSTEM_CONFIG']
+        commands = ccsTools.CcsSetup.set_ccs_subsystems()
+        self.assertEqual(len(commands), 1)
+        self.assertEqual(commands[0], 'subsystems = None')
+
 if __name__ == '__main__':
     unittest.main()

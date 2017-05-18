@@ -75,6 +75,16 @@ class CcsSetup(OrderedDict):
         self.commands.extend(['%s = %s' % item for item in self.items()])
         return self.commands
 
+    @staticmethod
+    def set_ccs_subsystems():
+        mapping = ccs_subsystem_mapping()
+        if mapping is None:
+            return ['subsystems = None']
+        commands = ['subsystems = OrderedDict()']
+        for key, value in mapping.items():
+            commands.append("subsystems['%s'] = '%s'" % (key, value))
+        return commands
+
 
 class CcsRaftSetup(CcsSetup):
     """
@@ -155,4 +165,4 @@ def ccs_subsystem_mapping(config_file=None, section='ccs_subsystems'):
     parser = ConfigParser.ConfigParser()
     parser.optionxform = str
     parser.read(config_file)
-    return dict(parser.items(section))
+    return OrderedDict([pair for pair in parser.items(section)])
