@@ -198,7 +198,9 @@ def configDir():
     Return the full path to the directory containing the site-specific
     configuration files.
     """
-    return os.environ['LCATR_CONFIG_DIR']
+    hj_config = \
+        os.path.join(os.environ['HARNESSEDJOBSDIR'], 'config', getSiteName())
+    return os.environ.get('LCATR_CONFIG_DIR', hj_config)
 
 def datacatalog_query(query, folder=None, site=None):
     from DataCatalog import DataCatalog
@@ -389,7 +391,15 @@ def make_png_file(callback, png_file, *args, **kwds):
         plt.clf()
 
 def png_data_product(pngfile, lsst_num):
-    return pngfile[len(lsst_num)+1:-len('.png')]
+    file_prefix = lsst_num
+    try:
+        my_prefix = '_'.join((lsst_num, getRunNumber()))
+        if pngfile.startswith(my_prefix):
+            file_prefix = my_prefix
+    except KeyError as eobj:
+        # Run number not available.
+        pass
+    return pngfile[len(file_prefix)+1:-len('.png')]
 
 def persist_png_files(file_pattern, lsst_id, folder=None, metadata=None):
     if metadata is None:
