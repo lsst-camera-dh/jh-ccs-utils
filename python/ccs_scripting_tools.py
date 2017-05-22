@@ -69,7 +69,7 @@ class SubsystemDecorator(object):
         return self.ccs_subsystem.asynchCommand(*args)
 
 
-CcsVersionInfo = namedTuple('CcsVersionInfo', 'project version rev')
+CcsVersionInfo = namedtuple('CcsVersionInfo', 'project version rev')
 
 class CcsSubsystems(object):
     """
@@ -96,12 +96,29 @@ class CcsSubsystems(object):
     def _get_version_info(self, subsystems):
         self.subsystems = OrderedDict()
         for subsystem in subsystems:
-            result = \
+            reply = \
                 self.__dict__[subsystem].synchCommand(10, 'getDistributionInfo')
-            info = dict()
-            for line in result.split('\n'):
-                tokens = [x.strip() for x in line.split(':')]
+            result = reply.getResult()
+            try:
+                self.subsystems[subsystem] = self._parse_version_info(result)
+            except AttributeError:
+                pass
+
+    @staticmethod
+    def _parse_version_info(ccs_result):
+        """
+        Code to parse response from CCS getDistributionInfo command.
+        """
+        info = dict()
+        for line in ccs_result.split('\n'):
+            tokens = [x.strip() for x in line.split(':')]
+            if len(tokens) >= 2:
                 info[tokens[0]] = tokens[1]
-            self.subsystems[subsystem] = CcsVersionInfo(info['Project'],
-                                                        info['Project Version'],
-                                                        info['Source Code Rev'])
+        return CcsVersionInfo(info['Project'], info['Project Version'],
+                              info['Source Code Rev'])
+
+    def write_versions(self, outfile):
+        "Write CCS version information to an output file."
+        with open(outfile, 'w') as output:
+            for key, value in self.subsystems.items():
+                output.write('%s = %s\n' % (value.project, value.version))
