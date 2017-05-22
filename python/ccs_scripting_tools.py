@@ -1,6 +1,7 @@
 """
 Tools for CCS jython scripts.
 """
+from collections import namedtuple, OrderedDict
 try:
     from org.lsst.ccs.scripting import CCS
 except ImportError:
@@ -67,6 +68,9 @@ class SubsystemDecorator(object):
         self._log_command(args)
         return self.ccs_subsystem.asynchCommand(*args)
 
+
+CcsVersionInfo = namedTuple('CcsVersionInfo', 'project version rev')
+
 class CcsSubsystems(object):
     """
     Container for collections of CCS subsystems.
@@ -87,3 +91,17 @@ class CcsSubsystems(object):
         for key, value in subsystems.items():
             self.__dict__[key] = SubsystemDecorator(CCS.attachSubsystem(value),
                                                     logger=logger)
+        self._get_version_info(subsystems)
+
+    def _get_version_info(self, subsystems):
+        self.subsystems = OrderedDict()
+        for subsystem in subsystems:
+            result = \
+                self.__dict__[subsystem].synchCommand(10, 'getDistributionInfo')
+            info = dict()
+            for line in result.split('\n'):
+                tokens = [x.strip() for x in line.split(':')]
+                info[tokens[0]] = tokens[1]
+            self.subsystems[subsystem] = CcsVersionInfo(info['Project'],
+                                                        info['Project Version'],
+                                                        info['Source Code Rev'])
