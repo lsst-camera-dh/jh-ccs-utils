@@ -15,6 +15,10 @@ except ImportError:
             """
             return NullSubsystem()
 
+        def setThrowExceptions(self, value):
+            "Do-nothing function."
+            pass
+
     CCS = CcsType()
 
     class NullSubsystem(object):
