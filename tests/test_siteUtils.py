@@ -39,7 +39,7 @@ class PackageVersionSummaryTestCase(unittest.TestCase):
         pass
     def test_parse_package_versions_summary(self):
         "Test that the expected package versions are returned."
-        summary_lims_file = os.path.join(os.environ['HARNESSEDJOBSDIR'],
+        summary_lims_file = os.path.join(os.environ['JHCCSUTILSDIR'],
                                          'tests', 'summary_lims_test_file')
         versions = siteUtils.parse_package_versions_summary(summary_lims_file)
         self.assertEqual(versions['harnessed-jobs'], '0.4.28')
