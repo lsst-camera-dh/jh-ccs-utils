@@ -40,6 +40,6 @@ class NullResponse(object):
 
     def getResult(self):
         "A generic result."
-        return '123'
+        return 1
 
 CCS = CcsType()

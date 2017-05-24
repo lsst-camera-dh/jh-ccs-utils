@@ -50,7 +50,8 @@ class CcsSubsystemMappingTestCase(unittest.TestCase):
         "Test the CcsSetup.set_ccs_subsystems function."
         os.environ['LCATR_CCS_SUBSYSTEM_CONFIG'] = self.config_file
         commands = ccsTools.CcsSetup.set_ccs_subsystems()
-        expected_commands = """subsystems = OrderedDict()
+        expected_commands = """from collections import OrderedDict
+subsystems = OrderedDict()
 subsystems['ts8'] = 'ts8'
 subsystems['ts'] = 'ts'
 subsystems['pd'] = 'ts/PhotoDiode'
