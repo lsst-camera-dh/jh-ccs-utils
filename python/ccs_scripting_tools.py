@@ -5,48 +5,7 @@ from collections import namedtuple, OrderedDict
 try:
     from org.lsst.ccs.scripting import CCS
 except ImportError:
-    # Create non-jython objects and classes to enable testing.
-    class CcsType(object):
-        "Non-jython proxy for org.lsst.ccs.scripting.CCS"
-
-        def attachSubsystem(self, value):
-            """
-            Attach a do-nothing object that acts like a CCS subsystem.
-            """
-            return NullSubsystem()
-
-        def setThrowExceptions(self, value):
-            "Do-nothing function."
-            pass
-
-    CCS = CcsType()
-
-    class NullSubsystem(object):
-        """
-        A do-nothing class with dummy methods provided by a CCS subsystem.
-        """
-        def __init__(self):
-            pass
-
-        def synchCommand(self, *args):
-            "Execute a synchronous CCS command."
-            return NullResponse()
-
-        def asynchCommand(self, *args):
-            "Execute an asynchronous CCS command."
-            return NullResponse()
-
-    class NullResponse(object):
-        """
-        Do-nothing response class to act as a return object by the
-        NullSubsystem methods.
-        """
-        def __init__(self):
-            pass
-
-        def getResult(self):
-            "A generic result."
-            return 1
+    from ccs_python_proxies import CCS
 
 class SubsystemDecorator(object):
     """
@@ -71,7 +30,6 @@ class SubsystemDecorator(object):
         "Decorator method for an asynchronous command."
         self._log_command(args)
         return self.ccs_subsystem.asynchCommand(*args)
-
 
 CcsVersionInfo = namedtuple('CcsVersionInfo', 'project version rev')
 
@@ -98,10 +56,16 @@ class CcsSubsystems(object):
         self._get_version_info(subsystems)
 
     def _get_version_info(self, subsystems):
+        # Version info is only available for "real" subsystems like
+        # 'ts' or 'ts8-bench', not whatever things like
+        # 'ts/Monochromator' are called in CCS parlance.  So extract
+        # the parts before the '/' as the "real" subsystem names of
+        # interest
+        real_subsystems = set([x.split('/')[0] for x in subsystems.values()])
         self.subsystems = OrderedDict()
-        for subsystem in subsystems:
-            reply = \
-                self.__dict__[subsystem].synchCommand(10, 'getDistributionInfo')
+        for subsystem in real_subsystems:
+            my_subsystem = CCS.attachSubsystem(subsystem)
+            reply = my_subsystem.synchCommand(10, 'getDistributionInfo')
             result = reply.getResult()
             try:
                 self.subsystems[subsystem] = self._parse_version_info(result)
