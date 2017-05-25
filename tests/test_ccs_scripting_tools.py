@@ -47,7 +47,8 @@ class CcsSubsystemsTestCase(unittest.TestCase):
         "Test the __init__ for the expected attributes."
         sub = ccs_scripting_tools.CcsSubsystems(dict(ts8='ts8',
                                                      pd='ts8/Monitor',
-                                                     mono='ts8/Monochromator'))
+                                                     mono='ts8/Monochromator'),
+                                                version_file=None)
         self.assertTrue(hasattr(sub, 'ts8'))
         self.assertTrue(hasattr(sub, 'pd'))
         self.assertTrue(hasattr(sub, 'mono'))
@@ -66,7 +67,8 @@ class CcsSubsystemsTestCase(unittest.TestCase):
         "Test the write_versions function."
         # Create a CcsSubsystems object and fake the _get_version_info
         # functionality for testing in python.
-        sub = ccs_scripting_tools.CcsSubsystems(dict(ts8='ts8'))
+        sub = ccs_scripting_tools.CcsSubsystems(dict(ts8='ts8'),
+                                                version_file=None)
         sub.subsystems['ts8'] = ccs_scripting_tools.CcsSubsystems.\
             _parse_version_info(CCS_version_text)
         version_file = 'ccs_versions.txt'
@@ -87,7 +89,8 @@ class SubsystemDecoratorTestCase(unittest.TestCase):
         sub = ccs_scripting_tools.CcsSubsystems(dict(ts8='ts8',
                                                      pd='ts/PhotoDiode',
                                                      mono='ts/Monochromator'),
-                                                logger=logger)
+                                                logger=logger,
+                                                version_file=None)
         fs.reset_stream()
         sub.ts8.synchCommand(10, "setTestType FE55")
         self.assertEqual(fs.get_value(), '10 setTestType FE55\n')

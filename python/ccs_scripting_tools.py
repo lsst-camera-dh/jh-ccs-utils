@@ -37,7 +37,8 @@ class CcsSubsystems(object):
     """
     Container for collections of CCS subsystems.
     """
-    def __init__(self, subsystems, logger=None):
+    def __init__(self, subsystems, logger=None,
+                 version_file='ccs_versions.txt'):
         """
         Constructor.
 
@@ -49,11 +50,17 @@ class CcsSubsystems(object):
                              mono='ts/Monochromator')
         logger : logging.Logger, optional
             Logger to be used by the SubsystemDecorator class. Default: None.
+        version_file : str, optional
+            Text file to contain the CCS subsystem version information.
+            This can be set to None to suppress writing the file.
+            Default: 'ccs_versions.txt'.
         """
         for key, value in subsystems.items():
             self.__dict__[key] = SubsystemDecorator(CCS.attachSubsystem(value),
                                                     logger=logger)
         self._get_version_info(subsystems)
+        if version_file is not None:
+            self.write_versions(version_file)
 
     def _get_version_info(self, subsystems):
         # Version info is only available for "real" subsystems like

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import unittest
 import siteUtils
@@ -48,6 +49,29 @@ class PackageVersionSummaryTestCase(unittest.TestCase):
         self.assertEqual(versions['datacat_config'],
                          "/nfs/farm/g/lsst/u1/software/datacat/config.cfg")
         self.assertEqual(len(versions), 11)
+
+class PersistCcsVersionsTestCase(unittest.TestCase):
+    """
+    TestCase class for parsing the CCS version info from the generated
+    text file and persisting via the lcatr.schema code.
+    """
+    def setUp(self):
+        self.version_file = 'ccs_versions.txt'
+        with open(self.version_file, 'w') as output:
+            output.write('ts8 = ts8_version\n')
+            output.write('ts8-bench = ts8_bench_version\n')
+
+    def tearDown(self):
+        os.remove(self.version_file)
+
+    def test_persist_ccs_versions(self):
+        "Test function for persist_ccs_versions."
+        results = []
+        results = siteUtils.persist_ccs_versions(results, self.version_file)
+        self.assertEqual(results[0]['package'], 'ts8')
+        self.assertEqual(results[0]['version'], 'ts8_version')
+        self.assertEqual(results[1]['package'], 'ts8-bench')
+        self.assertEqual(results[1]['version'], 'ts8_bench_version')
 
 class PngDataProductTestCase(unittest.TestCase):
     "TestCase class for png data product handling code."
