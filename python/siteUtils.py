@@ -266,10 +266,10 @@ def packageVersions(versions_filename='installed_versions.txt'):
     parser.optionxform = str
     parser.read(versions_file)
     results = []
+    schema = lcatr.schema.get('package_versions')
     for section in parser.sections():
         for package, version in parser.items(section):
-            results.append(lcatr.schema.valid(lcatr.schema.get('package_versions'),
-                                              package=package,
+            results.append(lcatr.schema.valid(schema, package=package,
                                               version=version))
     return results
 
@@ -282,6 +282,15 @@ def parse_package_versions_summary(summary_lims_file):
     if len(package_versions) == 0:
         return None
     return package_versions
+
+def persist_ccs_versions(results, version_file='ccs_versions.txt'):
+    with open(version_file) as fp:
+        schema = lcatr.schema.get('package_versions')
+        for line in fp:
+            tokens = [x.strip() for x in line.strip().split('=')]
+            results.append(lcatr.schema.valid(schema, package=tokens[0],
+                                              version=tokens[1]))
+    return results
 
 def jobInfo():
     results = packageVersions()

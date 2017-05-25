@@ -17,7 +17,7 @@ class CcsSetup(OrderedDict):
     are known in the calling python code and which are needed by the
     jython script.
     """
-    def __init__(self, configFile):
+    def __init__(self, configFile, sys_paths=()):
         """
         configFile contains the names of the site-specific
         configuration files.  File basenames are provided in
@@ -50,6 +50,8 @@ class CcsSetup(OrderedDict):
 
         self._read(os.path.join(siteUtils.getJobDir(), configFile))
 
+        self.sys_paths = sys_paths
+
     def __setitem__(self, key, value):
         super(CcsSetup, self).__setitem__(key, "'%s'" % str(value))
 
@@ -70,6 +72,8 @@ class CcsSetup(OrderedDict):
         Return the setup commands for the CCS script.
         """
         # Insert path to the modules used by the jython code.
+        for item in self.sys_paths:
+            self.commands.insert(0, 'sys.path.append("%s")' % item)
         self.commands.insert(0, 'sys.path.append("%s")' % siteUtils.pythonDir())
         self.commands.insert(0, 'import sys')
         # Set the local variables.
@@ -84,7 +88,8 @@ class CcsSetup(OrderedDict):
         mapping = ccs_subsystem_mapping()
         if mapping is None:
             return ['subsystems = None']
-        commands = ['subsystems = OrderedDict()']
+        commands = ['from collections import OrderedDict',
+                    'subsystems = OrderedDict()']
         for key, value in mapping.items():
             commands.append("subsystems['%s'] = '%s'" % (key, value))
         return commands
@@ -95,8 +100,8 @@ class CcsRaftSetup(CcsSetup):
     Subclass of CcsSetup that will query the eTraveler db tables for
     the sensors in the raft specified as LCATR_UNIT_ID.
     """
-    def __init__(self, configFile):
-        super(CcsRaftSetup, self).__init__(configFile)
+    def __init__(self, configFile, sys_paths=()):
+        super(CcsRaftSetup, self).__init__(configFile, sys_paths=sys_paths)
         self.commands.append('from collections import namedtuple')
         self.commands.append("SensorInfo = namedtuple('SensorInfo', 'sensor_id manufacturer_sn'.split())")
         self.commands.append("ccd_names = dict()")
@@ -121,7 +126,8 @@ class CcsRaftSetup(CcsSetup):
                      self['tsCWD'].strip("'"))
 
 
-def ccsProducer(jobName, ccsScript, ccs_setup_class=None, verbose=True):
+def ccsProducer(jobName, ccsScript, ccs_setup_class=None, sys_paths=(),
+                verbose=True):
     """
     Run the CCS data acquistion script under the CCS jython interpreter.
     """
@@ -130,7 +136,7 @@ def ccsProducer(jobName, ccsScript, ccs_setup_class=None, verbose=True):
 
     ccs = CcsJythonInterpreter("ts")
     configDir = siteUtils.configDir()
-    setup = ccs_setup_class('%s/acq.cfg' % configDir)
+    setup = ccs_setup_class('%s/acq.cfg' % configDir, sys_paths=sys_paths)
 
     result = ccs.syncScriptExecution(siteUtils.jobDirPath(ccsScript), setup(),
                                      verbose=verbose)
