@@ -96,6 +96,8 @@ class SubsystemDecoratorTestCase(unittest.TestCase):
         self.assertEqual(fs.get_value(), '10 setTestType FE55\n')
         sub.ts8.synchCommand(10, "setTestType", "FE55")
         self.assertEqual(fs.get_value(), '10 setTestType FE55\n')
+        sub.ts8.synchCommand(10, 'accumBuffer', 100, 0.183)
+        self.assertEqual(fs.get_value(), '10 accumBuffer 100 0.183\n')
         sub.ts8.asynchCommand("setTestType", "FE55")
         self.assertEqual(fs.get_value(), 'setTestType FE55\n')
 
