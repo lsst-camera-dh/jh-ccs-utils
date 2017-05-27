@@ -56,6 +56,11 @@ class CcsSubsystems(object):
             Default: 'ccs_versions.txt'.
         """
         for key, value in subsystems.items():
+            if value == 'subsystem-proxy':
+                from ccs_python_proxies import NullSubsystem
+                self.__dict__[key] = SubsystemDecorator(NullSubsystem(),
+                                                        logger=logger)
+                continue
             self.__dict__[key] = SubsystemDecorator(CCS.attachSubsystem(value),
                                                     logger=logger)
         self._get_version_info(subsystems)
@@ -68,7 +73,8 @@ class CcsSubsystems(object):
         # 'ts/Monochromator' are called in CCS parlance.  So extract
         # the parts before the '/' as the "real" subsystem names of
         # interest
-        real_subsystems = set([x.split('/')[0] for x in subsystems.values()])
+        real_subsystems = set([x.split('/')[0] for x in subsystems.values()
+                               if x != 'subsystem-proxy'])
         self.subsystems = OrderedDict()
         for subsystem in real_subsystems:
             my_subsystem = CCS.attachSubsystem(subsystem)
