@@ -158,6 +158,8 @@ def ccsValidator(results=None):
         results = []
     files = glob.glob('*/*.fits')
     files += glob.glob('pd-values*.txt')
+    files += glob.glob('*.png')
+    files += glob.glob('*.seq')
     unique_files = set(files)
     results.extend([lcatr.schema.fileref.make(item) for item in unique_files])
     results.extend(siteUtils.jobInfo())
