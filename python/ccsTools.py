@@ -3,10 +3,12 @@ Module to supplement the interface between python and the CCS jython
 interpreter.
 """
 import os
+import glob
 import shutil
 from collections import OrderedDict
 import ConfigParser
 from PythonBinding import CcsJythonInterpreter
+import lcatr.schema
 import siteUtils
 import camera_components
 
@@ -146,6 +148,24 @@ def ccsProducer(jobName, ccsScript, ccs_setup_class=None, sys_paths=(),
     if result.thread.java_exceptions:
         raise RuntimeError("java.lang.Exceptions raised:\n%s"
                            % '\n'.join(result.thread.java_exceptions))
+
+def ccsValidator(results=None):
+    """
+    Persist standard file patterns, e.g., '*.fits', 'pd-values*.txt',
+    using lcatr.schema.
+    """
+    if results is None:
+        results = []
+    files = glob.glob('*/*.fits')
+    files += glob.glob('pd-values*.txt')
+    files += glob.glob('*.png')
+    files += glob.glob('*.seq')
+    unique_files = set(files)
+    results.extend([lcatr.schema.fileref.make(item) for item in unique_files])
+    results.extend(siteUtils.jobInfo())
+    results = siteUtils.persist_ccs_versions(results)
+    lcatr.schema.write_file(results)
+    lcatr.schema.validate_file()
 
 def ccs_subsystem_mapping(config_file=None, section='ccs_subsystems'):
     """

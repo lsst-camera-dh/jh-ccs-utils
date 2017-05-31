@@ -47,11 +47,13 @@ class CcsSubsystemsTestCase(unittest.TestCase):
         "Test the __init__ for the expected attributes."
         sub = ccs_scripting_tools.CcsSubsystems(dict(ts8='ts8',
                                                      pd='ts8/Monitor',
-                                                     mono='ts8/Monochromator'),
+                                                     mono='ts8/Monochromator',
+                                                     proxy='subsystem_proxy'),
                                                 version_file=None)
         self.assertTrue(hasattr(sub, 'ts8'))
         self.assertTrue(hasattr(sub, 'pd'))
         self.assertTrue(hasattr(sub, 'mono'))
+        self.assertTrue(hasattr(sub, 'proxy'))
 
     def test_parse_version_info(self):
         "Test the _parse_version_info function."

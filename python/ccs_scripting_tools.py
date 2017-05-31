@@ -56,11 +56,14 @@ class CcsSubsystems(object):
             Default: 'ccs_versions.txt'.
         """
         for key, value in subsystems.items():
+            if value == 'subsystem-proxy':
+                from ccs_python_proxies import NullSubsystem
+                self.__dict__[key] = SubsystemDecorator(NullSubsystem(),
+                                                        logger=logger)
+                continue
             self.__dict__[key] = SubsystemDecorator(CCS.attachSubsystem(value),
                                                     logger=logger)
         self._get_version_info(subsystems)
-        if version_file is not None:
-            self.write_versions(version_file)
 
     def _get_version_info(self, subsystems):
         # Version info is only available for "real" subsystems like
@@ -68,15 +71,17 @@ class CcsSubsystems(object):
         # 'ts/Monochromator' are called in CCS parlance.  So extract
         # the parts before the '/' as the "real" subsystem names of
         # interest
-        real_subsystems = set([x.split('/')[0] for x in subsystems.values()])
+        real_subsystems = set([x.split('/')[0] for x in subsystems.values()
+                               if x != 'subsystem-proxy'])
         self.subsystems = OrderedDict()
         for subsystem in real_subsystems:
             my_subsystem = CCS.attachSubsystem(subsystem)
             reply = my_subsystem.synchCommand(10, 'getDistributionInfo')
-            result = reply.getResult()
             try:
+                result = reply.getResult().toString()
                 self.subsystems[subsystem] = self._parse_version_info(result)
             except AttributeError:
+                # Running in python for unit tests.
                 pass
 
     @staticmethod
