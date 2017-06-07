@@ -284,12 +284,28 @@ def parse_package_versions_summary(summary_lims_file):
     return package_versions
 
 def persist_ccs_versions(results, version_file='ccs_versions.txt'):
+    if not os.path.isfile(version_file):
+        raise RuntimeError("persist_ccs_versions: version file not found.")
+    schema = lcatr.schema.get('package_versions')
     with open(version_file) as fp:
-        schema = lcatr.schema.get('package_versions')
         for line in fp:
             tokens = [x.strip() for x in line.strip().split('=')]
             results.append(lcatr.schema.valid(schema, package=tokens[0],
                                               version=tokens[1]))
+    return results
+
+def persist_reb_info(results, reb_info_file='reb_info.txt'):
+    if not os.path.isfile(reb_info_file):
+        raise RuntimeError("persist_reb_info: REB info file not found.")
+    schema = lcatr.schema.get('REBVersionsBefore')
+    with open(reb_info_file) as fp:
+        kwds = dict()
+        for i, line in enumerate(fp):
+            reb_name, firmware, sn = line.strip().split()
+            kwds['REB%iname' % i] = reb_name
+            kwds['REB%ifirmware' % i] = firmware
+            kwds['REB%iSN' % i] = sn
+            results.append(lcatr.schema.valid(schema, **kwds))
     return results
 
 def jobInfo():
@@ -392,11 +408,12 @@ def make_png_file(callback, png_file, *args, **kwds):
     try:
         result = callback(*args, **kwds)
         plt.savefig(png_file)
-        plt.clf()
         return result
     except Exception as eobj:
         print "Exception raised while creating %s:" % png_file
         print eobj
+        raise
+    finally:
         plt.clf()
 
 def png_data_product(pngfile, lsst_num):
