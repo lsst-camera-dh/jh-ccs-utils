@@ -15,9 +15,9 @@ def write_REB_info(ts8sub, outfile='reb_info.txt'):
         The name of the text file to contain the REB info.
         Default: 'reb_info.txt'.
     """
-    reb_names = ts8sub.synchCommand(10, 'getREBDeviceNames')
-    fw_vers = ts8sub.synchCommand(10, 'getREBHwVersions')
-    SNs = ts8sub.synchCommand(10, 'getREBSerialNumbers')
+    reb_names = ts8sub.synchCommand(10, 'getREBDeviceNames').getResult()
+    fw_vers = ts8sub.synchCommand(10, 'getREBHwVersions').getResult()
+    SNs = ts8sub.synchCommand(10, 'getREBSerialNumbers').getResult()
     with open(outfile, 'w') as output:
         for reb_info in zip(reb_names, fw_vers, SNs):
             output.write('%s  %x  %x\n' % reb_info)

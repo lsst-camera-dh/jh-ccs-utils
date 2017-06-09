@@ -305,7 +305,7 @@ def persist_reb_info(results, reb_info_file='reb_info.txt'):
             kwds['REB%iname' % i] = reb_name
             kwds['REB%ifirmware' % i] = firmware
             kwds['REB%iSN' % i] = sn
-            results.append(lcatr.schema.valid(schema, **kwds))
+        results.append(lcatr.schema.valid(schema, **kwds))
     return results
 
 def jobInfo():
