@@ -1,6 +1,27 @@
 """
 Utilities to work with the ts8 subsystem.
 """
+
+def write_REB_info(ts8sub, outfile='reb_info.txt'):
+    """
+    Write the REB device names, firmware versions, and manufacturer
+    serial numbers to a text file for persisting to the eT tables.
+
+    Parameters
+    ----------
+    ts8sub : CCS subsystem
+        The ts8 subsystem.
+    outfile : str, optional
+        The name of the text file to contain the REB info.
+        Default: 'reb_info.txt'.
+    """
+    reb_names = ts8sub.synchCommand(10, 'getREBDeviceNames').getResult()
+    fw_vers = ts8sub.synchCommand(10, 'getREBHwVersions').getResult()
+    SNs = ts8sub.synchCommand(10, 'getREBSerialNumbers').getResult()
+    with open(outfile, 'w') as output:
+        for reb_info in zip(reb_names, fw_vers, SNs):
+            output.write('%s  %x  %x\n' % reb_info)
+
 def set_ccd_info(ccs_sub, ccd_names, logger):
     """
     Set the CCD serial numbers in the CCS code.  Get the CCD

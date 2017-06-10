@@ -164,6 +164,7 @@ def ccsValidator(results=None):
     results.extend([lcatr.schema.fileref.make(item) for item in unique_files])
     results.extend(siteUtils.jobInfo())
     results = siteUtils.persist_ccs_versions(results)
+    results = siteUtils.persist_reb_info(results)
     lcatr.schema.write_file(results)
     lcatr.schema.validate_file()
 
