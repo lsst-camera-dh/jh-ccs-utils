@@ -187,7 +187,8 @@ class SubsystemDispatcher(object):
         if data.startswith('['):
             # We have a list of items, so cast each item and return the list.
             tokens = data[1:-1].split(', ')
-            result = [SubsystemDispatcher._cast(x) for x in tokens]
+            # Recursively resolve item'd lists.
+            result = [SubsystemDispatcher.default_parser(x) for x in tokens]
         else:
             result = SubsystemDispatcher._cast(data)
         return result
