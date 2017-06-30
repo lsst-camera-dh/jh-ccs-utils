@@ -56,9 +56,11 @@ class CcsSubsystems(object):
             Default: 'ccs_versions.txt'.
         """
         for key, value in subsystems.items():
-            if value == 'subsystem-proxy':
-                from ccs_python_proxies import NullSubsystem
-                self.__dict__[key] = SubsystemDecorator(NullSubsystem(),
+            if value in self._proxy_subsystems:
+                import ccs_python_proxies
+                self._proxy_subsystems = ccs_python_proxies.CCS.subsystem_names
+                proxy_subsystem = ccs_python_proxies.CCS.attachSubsystem(value)
+                self.__dict__[key] = SubsystemDecorator(proxy_subsystem,
                                                         logger=logger)
                 continue
             self.__dict__[key] = SubsystemDecorator(CCS.attachSubsystem(value),
@@ -72,7 +74,7 @@ class CcsSubsystems(object):
         # the parts before the '/' as the "real" subsystem names of
         # interest
         real_subsystems = set([x.split('/')[0] for x in subsystems.values()
-                               if x != 'subsystem-proxy'])
+                               if x not in self._proxy_subsystems])
         self.subsystems = OrderedDict()
         for subsystem in real_subsystems:
             my_subsystem = CCS.attachSubsystem(subsystem)

@@ -4,16 +4,23 @@ enable testing.
 """
 class CcsType(object):
     "Python proxy for the org.lsst.ccs.scripting.CCS jython object."
+    def __init__(self):
+        self.proxies = {'ts8-proxy': Ts8Proxy(),
+                        'subsystem-proxy': NullSubsystem()}
 
     def attachSubsystem(self, value):
         """
-        Attach a do-nothing object that has the CCS subsystem interface.
+        Attach a proxy subsystem object that has the CCS subsystem interface.
         """
-        return NullSubsystem()
+        return self.proxies[value]
 
     def setThrowExceptions(self, value):
         "Do-nothing function."
         pass
+
+    @property
+    def subsystem_names(self):
+        return self.proxies.keys()
 
 class NullSubsystem(object):
     """
@@ -30,6 +37,26 @@ class NullSubsystem(object):
         "Execute an asynchronous CCS command."
         return NullResponse()
 
+class Ts8Proxy(NullSubsystem):
+    def __init__(self):
+        super(Ts8Proxy, self).__init__()
+        self._fill_responses()
+
+    def _fill_responses(self):
+        self.responses = dict()
+        self.responses['getREBDeviceNames'] \
+            = ProxyResponse(('R00.Reb0', 'R00.Reb1', 'R00.Reb2'))
+        self.responses['getREBHwVersions'] = ProxyResponse((1, 2, 3))
+        self.responses['getREBSerialNumbers'] = ProxyResponse((4, 5, 6))
+
+    def synchCommand(self, *args):
+        command = ' '.join([str(x) for x in args[1:]])
+        return self.responses[command]
+
+    def asynchCommand(self, *args):
+        command = ' '.join([str(x) for x in args])
+        return self.responses[command]
+
 class NullResponse(object):
     """
     Do-nothing response class to act as a return object by the
@@ -41,5 +68,13 @@ class NullResponse(object):
     def getResult(self):
         "A generic result."
         return 1
+
+class ProxyResponse(NullResponse):
+    def __init__(self, content):
+        super(ProxyResponse, self).__init__()
+        self.content = content
+
+    def getResult(self):
+        return self.content
 
 CCS = CcsType()
