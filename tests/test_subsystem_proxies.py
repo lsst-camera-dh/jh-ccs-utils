@@ -1,3 +1,6 @@
+"""
+Unit tests for ccs_python_proxies.py module.
+"""
 import unittest
 import ccs_python_proxies
 
@@ -10,6 +13,7 @@ class Ts8RebCommandTestCase(unittest.TestCase):
         pass
 
     def test_get_REB_info(self):
+        "Tests for REB-related .synchCommand commands."
         ts8 = ccs_python_proxies.CCS.attachSubsystem('ts8-proxy')
 
         reb_names = ts8.synchCommand(10, 'getREBDeviceNames').getResult()

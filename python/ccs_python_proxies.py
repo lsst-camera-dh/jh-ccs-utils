@@ -20,6 +20,9 @@ class CcsType(object):
 
     @property
     def subsystem_names(self):
+        """
+        Return a list of valid proxy subsytems.
+        """
         return self.proxies.keys()
 
 class NullSubsystem(object):
@@ -31,13 +34,14 @@ class NullSubsystem(object):
 
     def synchCommand(self, *args):
         "Execute a synchronous CCS command."
-        return NullResponse()
+        return NullResponse(*args)
 
     def asynchCommand(self, *args):
         "Execute an asynchronous CCS command."
-        return NullResponse()
+        return NullResponse(*args)
 
 class Ts8Proxy(NullSubsystem):
+    "Fake ts8 subsystem with canned responses to CCS commands."
     def __init__(self):
         super(Ts8Proxy, self).__init__()
         self._fill_responses()
@@ -91,6 +95,7 @@ class NullResponse(object):
         return 1
 
 class ProxyResponse(NullResponse):
+    "Response object with canned response content."
     def __init__(self, content):
         super(ProxyResponse, self).__init__()
         self.content = content

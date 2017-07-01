@@ -1,11 +1,13 @@
 """
 Tools for CCS jython scripts.
 """
+from __future__ import print_function
 from collections import namedtuple, OrderedDict
 import ccs_python_proxies
 try:
     from org.lsst.ccs.scripting import CCS
 except ImportError:
+    print("importing CCS object from ccs_python_proxies")
     CCS = ccs_python_proxies.CCS
 
 class SubsystemDecorator(object):
