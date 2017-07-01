@@ -21,12 +21,14 @@ class Ts8RebCommandTestCase(unittest.TestCase):
         reb_firmware_versions \
             = ts8.synchCommand(10, 'getREBHwVersions').getResult()
         self.assertEqual(len(reb_firmware_versions), 3)
-        for fw_ver, expected_ver in zip(reb_firmware_versions, (1, 2, 3)):
-            self.assertEqual(fw_ver, expected_ver)
+        expected_versions = [808599560, 808599560, 808599560]
+        for fw_ver, expected in zip(reb_firmware_versions, expected_versions):
+            self.assertEqual(fw_ver, expected)
 
         reb_SNs = ts8.synchCommand(10, 'getREBSerialNumbers').getResult()
         self.assertEqual(len(reb_SNs), 3)
-        for reb_sn, expected_sn in zip(reb_SNs, (4, 5, 6)):
+        expected_sns = [305877457, 305892521, 305879138]
+        for reb_sn, expected_sn in zip(reb_SNs, expected_sns):
             self.assertEqual(reb_sn, expected_sn)
 
 if __name__ == '__main__':

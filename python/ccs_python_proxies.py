@@ -46,8 +46,10 @@ class Ts8Proxy(NullSubsystem):
         self.responses = dict()
         self.responses['getREBDeviceNames'] \
             = ProxyResponse(('R00.Reb0', 'R00.Reb1', 'R00.Reb2'))
-        self.responses['getREBHwVersions'] = ProxyResponse((1, 2, 3))
-        self.responses['getREBSerialNumbers'] = ProxyResponse((4, 5, 6))
+        self.responses['getREBHwVersions'] \
+            = ProxyResponse([808599560, 808599560, 808599560])
+        self.responses['getREBSerialNumbers'] \
+            = ProxyResponse([305877457, 305892521, 305879138])
         self.responses['printGeometry 3'] = ProxyResponse('''--> R00
 ---> R00.Reb2
 ----> R00.Reb2.Sen20
