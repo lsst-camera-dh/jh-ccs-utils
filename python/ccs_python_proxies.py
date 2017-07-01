@@ -12,7 +12,10 @@ class CcsType(object):
         """
         Attach a proxy subsystem object that has the CCS subsystem interface.
         """
-        return self.proxies[value]
+        try:
+            return self.proxies[value]
+        except KeyError:
+            return NullSubsystem()
 
     def setThrowExceptions(self, value):
         "Do-nothing function."
@@ -87,7 +90,7 @@ class NullResponse(object):
     Do-nothing response class to act as a return object by the
     NullSubsystem methods.
     """
-    def __init__(self):
+    def __init__(self, *args):
         pass
 
     def getResult(self):
