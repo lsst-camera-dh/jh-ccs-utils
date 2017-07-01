@@ -2,10 +2,11 @@
 Tools for CCS jython scripts.
 """
 from collections import namedtuple, OrderedDict
+import ccs_python_proxies
 try:
     from org.lsst.ccs.scripting import CCS
 except ImportError:
-    from ccs_python_proxies import CCS
+    CCS = ccs_python_proxies.CCS
 
 class SubsystemDecorator(object):
     """
@@ -55,10 +56,9 @@ class CcsSubsystems(object):
             This can be set to None to suppress writing the file.
             Default: 'ccs_versions.txt'.
         """
+        self._proxy_subsystems = ccs_python_proxies.CCS.subsystem_names
         for key, value in subsystems.items():
             if value in self._proxy_subsystems:
-                import ccs_python_proxies
-                self._proxy_subsystems = ccs_python_proxies.CCS.subsystem_names
                 proxy_subsystem = ccs_python_proxies.CCS.attachSubsystem(value)
                 self.__dict__[key] = SubsystemDecorator(proxy_subsystem,
                                                         logger=logger)

@@ -48,14 +48,33 @@ class Ts8Proxy(NullSubsystem):
             = ProxyResponse(('R00.Reb0', 'R00.Reb1', 'R00.Reb2'))
         self.responses['getREBHwVersions'] = ProxyResponse((1, 2, 3))
         self.responses['getREBSerialNumbers'] = ProxyResponse((4, 5, 6))
-
+        self.responses['printGeometry 3'] = ProxyResponse('''--> R00
+---> R00.Reb2
+----> R00.Reb2.Sen20
+----> R00.Reb2.Sen21
+----> R00.Reb2.Sen22
+---> R00.Reb1
+----> R00.Reb1.Sen10
+----> R00.Reb1.Sen11
+----> R00.Reb1.Sen12
+---> R00.Reb0
+----> R00.Reb0.Sen00
+----> R00.Reb0.Sen01
+----> R00.Reb0.Sen02
+''')
     def synchCommand(self, *args):
         command = ' '.join([str(x) for x in args[1:]])
-        return self.responses[command]
+        try:
+            return self.responses[command]
+        except KeyError:
+            return NullResponse()
 
     def asynchCommand(self, *args):
         command = ' '.join([str(x) for x in args])
-        return self.responses[command]
+        try:
+            return self.responses[command]
+        except KeyError:
+            return NullResponse()
 
 class NullResponse(object):
     """
