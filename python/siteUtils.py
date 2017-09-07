@@ -412,7 +412,6 @@ def make_png_file(callback, png_file, *args, **kwds):
     except Exception as eobj:
         print "Exception raised while creating %s:" % png_file
         print eobj
-        raise
     finally:
         plt.clf()
 
