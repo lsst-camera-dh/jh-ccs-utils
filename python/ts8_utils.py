@@ -1,6 +1,7 @@
 """
 Utilities to work with the ts8 subsystem.
 """
+from collections import namedtuple
 
 def write_REB_info(ts8sub, outfile='reb_info.txt'):
     """
@@ -21,6 +22,31 @@ def write_REB_info(ts8sub, outfile='reb_info.txt'):
     with open(outfile, 'w') as output:
         for reb_info in zip(reb_names, fw_vers, SNs):
             output.write('%s  %x  %x\n' % reb_info)
+
+def get_REB_info(ts8sub, rebid):
+    """
+    Retrieve the REB device name, firmware version, and manufacturer
+    serial number for the specified REB ID.
+
+    Parameters
+    ----------
+    ts8sub : CCS subsystem
+        The ts8 subsystem.
+    rebid : int
+        The REB ID.
+
+    Returns
+    -------
+    namedtuple : (REB device name, firmware version, serial number)
+    """
+    RebInfo = namedtuple('RebInfo', 'deviceName hwVersion serialNumber'.split())
+    rebids = list(ts8sub.synchCommand(10, 'getREBIds').getResult())
+    dev_names = list(ts8sub.synchCommand(10, 'getREBDevices').getResult())
+    hw_versions = list(ts8sub.synchCommand(10, 'getREBHwVersions').getResult())
+    serial_numbers \
+        = list(ts8sub.synchCommand(10, 'getREBSerialNumbers').getResult())
+    index = rebids.index(rebid)
+    return RebInfo(dev_names[index], hw_versions[index], serial_numbers[index])
 
 def set_ccd_info(ccs_sub, ccd_names, logger):
     """

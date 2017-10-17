@@ -13,9 +13,10 @@ class SubsystemDecorator(object):
     Decorator class to overlay logging of the commands sent to a CCS
     subsystem object.
     """
-    def __init__(self, ccs_subsystem, logger=None):
+    def __init__(self, ccs_subsystem, logger=None, name=None):
         self.ccs_subsystem = ccs_subsystem
         self.logger = logger
+        self.name = name
 
     def _log_command(self, args):
         if self.logger is not None:
