@@ -62,10 +62,11 @@ class CcsSubsystems(object):
             if value in self._proxy_subsystems:
                 proxy_subsystem = ccs_python_proxies.CCS.attachSubsystem(value)
                 self.__dict__[key] = SubsystemDecorator(proxy_subsystem,
-                                                        logger=logger)
+                                                        logger=logger,
+                                                        name=value)
                 continue
             self.__dict__[key] = SubsystemDecorator(CCS.attachSubsystem(value),
-                                                    logger=logger)
+                                                    logger=logger, name=value)
         self._get_version_info(subsystems)
 
     def _get_version_info(self, subsystems):
