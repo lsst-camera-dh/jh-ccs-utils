@@ -44,7 +44,8 @@ def get_REB_info(ts8sub, rebid):
     dev_names = list(ts8sub.synchCommand(10, 'getREBDevices').getResult())
     hw_versions = list(ts8sub.synchCommand(10, 'getREBHwVersions').getResult())
     serial_numbers \
-        = list(ts8sub.synchCommand(10, 'getREBSerialNumbers').getResult())
+        = ['%x' % x for x in
+           ts8sub.synchCommand(10, 'getREBSerialNumbers').getResult()]
     index = rebids.index(rebid)
     return RebInfo(dev_names[index], hw_versions[index], serial_numbers[index])
 

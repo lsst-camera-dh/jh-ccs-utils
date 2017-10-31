@@ -118,6 +118,12 @@ class CcsRaftSetup(CcsSetup):
             self.set_item('ccd_names["%s"]' % slot, 'SensorInfo("%s", "%s")'
                           % (str(sensor.sensor_id),
                              str(sensor.manufacturer_sn)))
+
+#        # aliveness bench reb serial numbers:
+#        for slot, reb_sn in zip(('REB0', 'REB1', 'REB2'),
+#                                [412220615, 412162821, 305879976]):
+#            raft.rebs[slot].manufacturer_sn = '%x' % reb_sn
+
         for slot, reb in raft.rebs.items():
             self.set_item('reb_eT_info["%s"]' % slot,
                           'RebInfo("%s", "%s", "%s")'

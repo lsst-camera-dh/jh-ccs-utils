@@ -53,10 +53,18 @@ class Ts8Proxy(NullSubsystem):
         self.responses = dict()
         self.responses['getREBDeviceNames'] \
             = ProxyResponse(('R00.Reb0', 'R00.Reb1', 'R00.Reb2'))
+        self.responses['getREBDevices'] \
+            = ProxyResponse(('R00.Reb0', 'R00.Reb1', 'R00.Reb2'))
         self.responses['getREBHwVersions'] \
             = ProxyResponse([808599560, 808599560, 808599560])
+        #self.responses['getREBSerialNumbers'] \
+        #    = ProxyResponse([305877457, 305892521, 305879138])
+#        # aliveness bench REBs:
+#        self.responses['getREBSerialNumbers'] \
+#            = ProxyResponse([412220615, 412162821, 305879976])
+        # ETU1 REBs:
         self.responses['getREBSerialNumbers'] \
-            = ProxyResponse([305877457, 305892521, 305879138])
+            = ProxyResponse([412165857, 412223738, 412160431])
         self.responses['printGeometry 3'] = ProxyResponse('''--> R00
 ---> R00.Reb2
 ----> R00.Reb2.Sen20
@@ -71,6 +79,7 @@ class Ts8Proxy(NullSubsystem):
 ----> R00.Reb0.Sen01
 ----> R00.Reb0.Sen02
 ''')
+        self.responses['getREBIds'] = ProxyResponse((0, 1, 2))
     def synchCommand(self, *args):
         command = ' '.join([str(x) for x in args[1:]])
         try:
