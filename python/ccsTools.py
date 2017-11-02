@@ -106,9 +106,11 @@ class CcsRaftSetup(CcsSetup):
         super(CcsRaftSetup, self).__init__(configFile, sys_paths=sys_paths)
         self.commands.append('from collections import namedtuple')
         self.commands.append("SensorInfo = namedtuple('SensorInfo', 'sensor_id manufacturer_sn'.split())")
+        self.commands.append("RebInfo = namedtuple('RebInfo', 'reb_id manufacturer_sn firmware_version'.split())")
         self.commands.append("ccd_names = dict()")
-        self._get_ccd_names()
-    def _get_ccd_names(self):
+        self.commands.append("reb_eT_info = dict()")
+        self._get_ccd_and_reb_names()
+    def _get_ccd_and_reb_names(self):
         raft_id = siteUtils.getUnitId()
         raft = camera_components.Raft.create_from_etrav(raft_id)
         for slot in raft.slot_names:
@@ -116,6 +118,17 @@ class CcsRaftSetup(CcsSetup):
             self.set_item('ccd_names["%s"]' % slot, 'SensorInfo("%s", "%s")'
                           % (str(sensor.sensor_id),
                              str(sensor.manufacturer_sn)))
+
+#        # aliveness bench reb serial numbers:
+#        for slot, reb_sn in zip(('REB0', 'REB1', 'REB2'),
+#                                [412220615, 412162821, 305879976]):
+#            raft.rebs[slot].manufacturer_sn = '%x' % reb_sn
+
+        for slot, reb in raft.rebs.items():
+            self.set_item('reb_eT_info["%s"]' % slot,
+                          'RebInfo("%s", "%s", "%s")'
+                          % (reb.reb_id, reb.manufacturer_sn,
+                             reb.firmware_version))
         ccd_type = str(raft.sensor_type.split('-')[0])
         self['ccd_type'] = ccd_type
         if ccd_type == 'ITL':
