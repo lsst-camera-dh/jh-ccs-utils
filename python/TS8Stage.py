@@ -22,7 +22,7 @@ from org.lsst.ccs.scripting import *
 from org.lsst.ccs.messaging import StatusMessageListener
 from org.lsst.ccs.subsystem.motorplatform.bus import (
     MotorReplyListener, MoveAxisRelative, MoveAxisAbsolute, ClearAllFaults,
-    StopAllMotion, HomeAxis)
+    StopAllMotion, HomeAxis, ChangeAxisEnable)
 
 class _Axis:
     """
