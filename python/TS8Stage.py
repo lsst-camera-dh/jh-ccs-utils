@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 from java.time import Duration
 
-from org.lsst.ccs.scripting import *
+from org.lsst.ccs.scripting import CCS, ScriptingStatusBusListener
 from org.lsst.ccs.messaging import StatusMessageListener
 from org.lsst.ccs.subsystem.motorplatform.bus import (
     MotorReplyListener, MoveAxisRelative, MoveAxisAbsolute, ClearAllFaults,
@@ -193,7 +193,7 @@ class Stage:
         axis : private type
             One of the three valid axis objects.
         timeout : float
-            How long to wait, in seconds. 
+            How long to wait, in seconds.
         """
         _checkAxis(axis)
         oldStatus = self.getAxisStatus(axis)
@@ -219,7 +219,7 @@ class Stage:
 
     def getControllerStatus(self):
         return self._replies.getControllerStatus()
-        
+
 
 class _SubsystemHandle:
     """
@@ -234,11 +234,13 @@ class _SubsystemHandle:
     def sendCommand(self, cmd, arg):
         self._subsysHandle.asynchCommand(cmd, arg)
 
-                
+
 class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):
     """Save the latest status message of each type; per axis, if applicable."""
     def __init__(self, target):
         self._target = target
+        self._lock = Lock()
+        # The following instance variables are protected by self._lock
         self._controllerStatus = None
         self._axisStatus = dict()
         self._ioStatus = None
@@ -246,20 +248,25 @@ class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):
         self._captureData = None
 
     def getControllerStatus(self):
-        return self._controllerStatus
+        with self._lock:
+            return self._controllerStatus
 
     def getAxisStatus(self, axis):
         _checkAxis(axis)
-        return self._axisStatus.get(axis.name, None)
+        with self._lock:
+            return self._axisStatus.get(axis.name, None)
 
     def getIoStatus(self):
-        return self._ioStatus
+        with self._lock:
+            return self._ioStatus
 
     def getPlatformConfig(self):
-        return self._platformConfig
+        with self._lock:
+            return self._platformConfig
 
     def getCapturedata(self):
-        return self._captureData
+        with self._lock:
+            return self._captureData
 
     ########## Implementation of ScriptingStatusBusListener #########
     def onStatusBusMessage(self, msg):
@@ -282,21 +289,28 @@ class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):
 
     ########## Implementation of MotorReplyListener ##########
     # An incoming status bus message will call one of these methods
-    # from its own callMotorReplyHandler() method.
+    # from its own callMotorReplyHandler() method. This will happen
+    # in a thread other than the one that's using this module,
+    # so we sync updates and retrievals of status info.
     def axisStatus(self, axstat):
-        self._axisStatus[axstat.getAxisName()] = axstat
+        with self._lock:
+            self._axisStatus[axstat.getAxisName()] = axstat
 
     def controllerStatus(self, constat):
-        self._controllerStatus = constat
+        with self._lock:
+            self._controllerStatus = constat
 
     def ioStatus(self, iostat):
-        self._iostatus = iostat
+        with self._lock:
+            self._iostatus = iostat
 
     def platformConfig(self, config):
-        self._platformConfig = config
+        with self._lock:
+            self._platformConfig = config
 
     def capturedData(self, data):
-        self._capturedData = data    
+        with self._lock:
+            self._capturedData = data
 
 
 def _hasmethod(obj, name):
@@ -310,7 +324,7 @@ class TimeoutError(exceptions.BaseException):
     def __init__(self, message):
         self.message = message
 
-        
+
 if __name__ == "__main__":
     # A short test of the module.
     stage = Stage("ts8-motorplatform")
