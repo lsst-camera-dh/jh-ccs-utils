@@ -56,7 +56,7 @@ class Stage:
     home() : Move the axis to its home position and then make the coordinate equal to zero.
     clearFaults() : Clear all axis and controller fault flags.
     stop() : Immediately stop all motion on all axes and discard any queued commands.
-    waitForStop() : Wait for an axis to stop moving.
+    waitForStop() : Wait for an axis to reach the target position and stop moving.
     """
     def __init__(self, subsystemName):
         """
@@ -117,7 +117,7 @@ class Stage:
         speed = min(speed, axis.maxSpeed)
         timeout = axis.maxTravel / speed + 1.0
         self._subsys.sendCommand("moveAxisAbsolute", MoveAxisAbsolute(axis.name, position, speed))
-        self.waitForStop(axis, timeout)
+        self.waitForStop(axis, position, timeout)
 
     def moveBy(self, axis, change, speed):
         """
@@ -142,8 +142,11 @@ class Stage:
         accel = 10.0 * speed # 1/10 second to get up to speed and to stop.
         d = accel * 0.1 * 0.1 # Combined distance covered while changing speed at the ends.
         moveTime = 0.1 + (change - d)/speed + 0.1
+        self._subsys.sendCommand("sendAxisStatus", SendAxisStatus(axis.name))
+        sleep(1.0);
+        position = self.getAxisStatus(axis).getPosition()
         self._subsys.sendCommand("moveAxisRelative", MoveAxisRelative(axis.name, change, moveTime))
-        self.waitForStop(axis, moveTime + 1.0)
+        self.waitForStop(axis, position + change, moveTime + 5.0)
 
     def home(self, *axes):
         """Bring the specified axes to their home positions and then
@@ -182,33 +185,31 @@ class Stage:
         """
         self._subsys.sendCommand("stopAllMotion", StopAllMotion())
 
-    def waitForStop(self, axis, timeout):
+    def waitForStop(self, axis, targetPosition, timeout):
         """
-        Wait until status messages from the worker subsystem indicate
-        that the given axis has stopped moving. Raises TimeoutError
-        if the axis hasn't stopped within the time allotted.
+        Wait until the current position is close to the target position.
+        Raises TimeoutError if the position never gets close or the axis
+        doesn't stop moving.
 
         Arguments
         ---------
         axis : private type
             One of the three valid axis objects.
+        targetPosition: float
+            The target position in mm.
         timeout : float
             How long to wait, in seconds.
         """
         _checkAxis(axis)
-        oldStatus = self.getAxisStatus(axis)
         deadline = datetime.now() + timedelta(seconds=timeout+2.0)
         status = self.getAxisStatus(axis)
-        # Make sure we don't test stale data.
-        # Wait for two new axis status messages before checking the axis-in-motion flag.
-        for i in range(1):
-            while (status is oldStatus):
-                sleep(0.25)
-                if datetime.now() > deadline:
-                    raise TimeoutError("Waiting for the " + axis.name + " axis to stop moving.")
-                status = self.getAxisStatus(axis)
-            oldStatus = status
-        while status.isMoving():
+        while (status is None) or (abs(targetPosition - status.getPosition()) > 0.1):
+           sleep(0.25)
+           if datetime.now() > deadline:
+              raise TimeoutError("Waiting for the " + axis.name + " axis to get near the target position.")
+           status = self.getAxisStatus(axis)
+        # Now wait for the axis to stop moving.
+        while (status is None) or (status.isMoving()):
             sleep(0.25)
             if datetime.now() > deadline:
                 raise TimeoutError("Waiting for the " + axis.name + " axis to stop moving.")
