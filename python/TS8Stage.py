@@ -18,11 +18,11 @@ from datetime import datetime, timedelta
 
 from java.time import Duration
 
-from org.lsst.ccs.scripting import *
+from org.lsst.ccs.scripting import CCS, ScriptingStatusBusListener
 from org.lsst.ccs.messaging import StatusMessageListener
 from org.lsst.ccs.subsystem.motorplatform.bus import (
     MotorReplyListener, MoveAxisRelative, MoveAxisAbsolute, ClearAllFaults,
-    StopAllMotion, HomeAxis)
+    StopAllMotion, HomeAxis, ChangeAxisEnable)
 
 class _Axis:
     """
@@ -56,7 +56,7 @@ class Stage:
     home() : Move the axis to its home position and then make the coordinate equal to zero.
     clearFaults() : Clear all axis and controller fault flags.
     stop() : Immediately stop all motion on all axes and discard any queued commands.
-    waitForStop() : Wait for an axis to stop moving.
+    waitForStop() : Wait for an axis to reach the target position and stop moving.
     """
     def __init__(self, subsystemName):
         """
@@ -117,7 +117,7 @@ class Stage:
         speed = min(speed, axis.maxSpeed)
         timeout = axis.maxTravel / speed + 1.0
         self._subsys.sendCommand("moveAxisAbsolute", MoveAxisAbsolute(axis.name, position, speed))
-        self.waitForStop(axis, timeout)
+        self.waitForStop(axis, position, timeout)
 
     def moveBy(self, axis, change, speed):
         """
@@ -142,8 +142,11 @@ class Stage:
         accel = 10.0 * speed # 1/10 second to get up to speed and to stop.
         d = accel * 0.1 * 0.1 # Combined distance covered while changing speed at the ends.
         moveTime = 0.1 + (change - d)/speed + 0.1
+        self._subsys.sendCommand("sendAxisStatus", SendAxisStatus(axis.name))
+        sleep(1.0);
+        position = self.getAxisStatus(axis).getPosition()
         self._subsys.sendCommand("moveAxisRelative", MoveAxisRelative(axis.name, change, moveTime))
-        self.waitForStop(axis, moveTime + 1.0)
+        self.waitForStop(axis, position + change, moveTime + 5.0)
 
     def home(self, *axes):
         """Bring the specified axes to their home positions and then
@@ -182,33 +185,31 @@ class Stage:
         """
         self._subsys.sendCommand("stopAllMotion", StopAllMotion())
 
-    def waitForStop(self, axis, timeout):
+    def waitForStop(self, axis, targetPosition, timeout):
         """
-        Wait until status messages from the worker subsystem indicate
-        that the given axis has stopped moving. Raises TimeoutError
-        if the axis hasn't stopped within the time allotted.
+        Wait until the current position is close to the target position.
+        Raises TimeoutError if the position never gets close or the axis
+        doesn't stop moving.
 
         Arguments
         ---------
         axis : private type
             One of the three valid axis objects.
+        targetPosition: float
+            The target position in mm.
         timeout : float
-            How long to wait, in seconds. 
+            How long to wait, in seconds.
         """
         _checkAxis(axis)
-        oldStatus = self.getAxisStatus(axis)
         deadline = datetime.now() + timedelta(seconds=timeout+2.0)
         status = self.getAxisStatus(axis)
-        # Make sure we don't test stale data.
-        # Wait for two new axis status messages before checking the axis-in-motion flag.
-        for i in range(1):
-            while (status is oldStatus):
-                sleep(0.25)
-                if datetime.now() > deadline:
-                    raise TimeoutError("Waiting for the " + axis.name + " axis to stop moving.")
-                status = self.getAxisStatus(axis)
-            oldStatus = status
-        while status.isMoving():
+        while (status is None) or (abs(targetPosition - status.getPosition()) > 0.1):
+           sleep(0.25)
+           if datetime.now() > deadline:
+              raise TimeoutError("Waiting for the " + axis.name + " axis to get near the target position.")
+           status = self.getAxisStatus(axis)
+        # Now wait for the axis to stop moving.
+        while (status is None) or (status.isMoving()):
             sleep(0.25)
             if datetime.now() > deadline:
                 raise TimeoutError("Waiting for the " + axis.name + " axis to stop moving.")
@@ -219,7 +220,7 @@ class Stage:
 
     def getControllerStatus(self):
         return self._replies.getControllerStatus()
-        
+
 
 class _SubsystemHandle:
     """
@@ -232,13 +233,17 @@ class _SubsystemHandle:
         self._subsysHandle  = CCS.attachSubsystem(subsystemName)
         CCS.addStatusBusListener(replyHandler, replyHandler.getMessageFilter())
     def sendCommand(self, cmd, arg):
-        self._subsysHandle.asynchCommand(cmd, arg)
+        # A timeout of ten seconds should be more than enough since the subsystem
+        # commands just put tasks in a work queue rather than do the work directly.
+        self._subsysHandle.synchCommand(10, cmd, arg)
 
-                
+
 class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):
     """Save the latest status message of each type; per axis, if applicable."""
     def __init__(self, target):
         self._target = target
+        self._lock = Lock()
+        # The following instance variables are protected by self._lock
         self._controllerStatus = None
         self._axisStatus = dict()
         self._ioStatus = None
@@ -246,20 +251,25 @@ class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):
         self._captureData = None
 
     def getControllerStatus(self):
-        return self._controllerStatus
+        with self._lock:
+            return self._controllerStatus
 
     def getAxisStatus(self, axis):
         _checkAxis(axis)
-        return self._axisStatus.get(axis.name, None)
+        with self._lock:
+            return self._axisStatus.get(axis.name, None)
 
     def getIoStatus(self):
-        return self._ioStatus
+        with self._lock:
+            return self._ioStatus
 
     def getPlatformConfig(self):
-        return self._platformConfig
+        with self._lock:
+            return self._platformConfig
 
     def getCapturedata(self):
-        return self._captureData
+        with self._lock:
+            return self._captureData
 
     ########## Implementation of ScriptingStatusBusListener #########
     def onStatusBusMessage(self, msg):
@@ -282,21 +292,28 @@ class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):
 
     ########## Implementation of MotorReplyListener ##########
     # An incoming status bus message will call one of these methods
-    # from its own callMotorReplyHandler() method.
+    # from its own callMotorReplyHandler() method. This will happen
+    # in a thread other than the one that's using this module,
+    # so we sync updates and retrievals of status info.
     def axisStatus(self, axstat):
-        self._axisStatus[axstat.getAxisName()] = axstat
+        with self._lock:
+            self._axisStatus[axstat.getAxisName()] = axstat
 
     def controllerStatus(self, constat):
-        self._controllerStatus = constat
+        with self._lock:
+            self._controllerStatus = constat
 
     def ioStatus(self, iostat):
-        self._iostatus = iostat
+        with self._lock:
+            self._iostatus = iostat
 
     def platformConfig(self, config):
-        self._platformConfig = config
+        with self._lock:
+            self._platformConfig = config
 
     def capturedData(self, data):
-        self._capturedData = data    
+        with self._lock:
+            self._capturedData = data
 
 
 def _hasmethod(obj, name):
@@ -310,7 +327,7 @@ class TimeoutError(exceptions.BaseException):
     def __init__(self, message):
         self.message = message
 
-        
+
 if __name__ == "__main__":
     # A short test of the module.
     stage = Stage("ts8-motorplatform")

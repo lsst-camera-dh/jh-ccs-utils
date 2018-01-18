@@ -133,7 +133,7 @@ class CcsRaftSetup(CcsSetup):
         self['ccd_type'] = ccd_type
         if ccd_type == 'ITL':
             self.set_item('sequence_file', self['itl_seqfile'])
-        elif ccd_type == 'E2V':
+        elif ccd_type.upper() == 'E2V':
             self.set_item('sequence_file', self['e2v_seqfile'])
         else:
             raise RuntimeError('Invalid ccd_type: %s' % ccd_type)
