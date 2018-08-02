@@ -41,6 +41,7 @@ def get_REB_info(ts8sub, rebid):
     """
     RebInfo = namedtuple('RebInfo', 'deviceName hwVersion serialNumber'.split())
     rebids = list(ts8sub.synchCommand(10, 'getREBIds').getResult())
+    rebids[:] = [x % 4 for x in rebids]
     dev_names = list(ts8sub.synchCommand(10, 'getREBDevices').getResult())
     hw_versions = list(ts8sub.synchCommand(10, 'getREBHwVersions').getResult())
     serial_numbers \
