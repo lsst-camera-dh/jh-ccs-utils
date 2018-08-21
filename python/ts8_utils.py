@@ -74,10 +74,15 @@ def set_ccd_info(ccs_sub, ccd_names, logger):
     # Parse the printGeometry output to map CCD values to REBs.
     geo = ccs_sub.ts8.synchCommand(2, "printGeometry 3").getResult()
     for line in geo.split('\n'):
-        if 'Sen' not in line:
+        # The lines with the CCD IDs and slot names will be of the form
+        # '---> R00.Reb2.S20'.  So we'll extract the last three
+        # non-whitespace letters to get the slot name and the full
+        # entry to get the CCD ID.
+        my_line = line.strip()     # remove any trailing whitespace
+        slot = my_line.split('.')[-1]
+        if len(slot) != 3 or slot[0] != 'S':
             continue
-        slot = 'S%s' % line[-2:]
-        ccd_id = line.split(' ')[1]
+        ccd_id = my_line.split(' ')[1]
         sensor = ccd_names[slot]
 
         # Set the LSST serial number.
