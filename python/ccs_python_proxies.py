@@ -67,17 +67,17 @@ class Ts8Proxy(NullSubsystem):
             = ProxyResponse([412165857, 412223738, 412160431])
         self.responses['printGeometry 3'] = ProxyResponse('''--> R00
 ---> R00.Reb2
-----> R00.Reb2.Sen20
-----> R00.Reb2.Sen21
-----> R00.Reb2.Sen22
+----> R00.Reb2.S20
+----> R00.Reb2.S21
+----> R00.Reb2.S22
 ---> R00.Reb1
-----> R00.Reb1.Sen10
-----> R00.Reb1.Sen11
-----> R00.Reb1.Sen12
+----> R00.Reb1.S10
+----> R00.Reb1.S11
+----> R00.Reb1.S12
 ---> R00.Reb0
-----> R00.Reb0.Sen00
-----> R00.Reb0.Sen01
-----> R00.Reb0.Sen02
+----> R00.Reb0.S00
+----> R00.Reb0.S01
+----> R00.Reb0.S02
 ''')
         self.responses['getREBIds'] = ProxyResponse((0, 1, 2))
     def synchCommand(self, *args):
