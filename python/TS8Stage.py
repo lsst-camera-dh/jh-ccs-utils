@@ -203,7 +203,7 @@ class Stage:
         _checkAxis(axis)
         deadline = datetime.now() + timedelta(seconds=timeout+2.0)
         status = self.getAxisStatus(axis)
-        while (status is None) or (abs(targetPosition - status.getPosition()) > 0.1):
+        while (status is None) or (abs(targetPosition - status.getPosition()) > 0.01):
            sleep(0.25)
            if datetime.now() > deadline:
               raise TimeoutError("Waiting for the " + axis.name + " axis to get near the target position.")
