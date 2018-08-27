@@ -80,6 +80,8 @@ class Ts8Proxy(NullSubsystem):
 ----> R00.Reb0.S02
 ''')
         self.responses['getREBIds'] = ProxyResponse((0, 1, 2))
+        self.responses['getSequencerParameter CleaningNumber'] = ProxyResponse([0, 0, 0])
+        self.responses['getSequencerParameter ClearCount'] = ProxyResponse([1, 1, 1])
     def synchCommand(self, *args):
         command = ' '.join([str(x) for x in args[1:]])
         try:
