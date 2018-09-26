@@ -177,7 +177,11 @@ def ccsValidator(results=None):
     results.extend([lcatr.schema.fileref.make(item) for item in unique_files])
     results.extend(siteUtils.jobInfo())
     results = siteUtils.persist_ccs_versions(results)
-    results = siteUtils.persist_reb_info(results)
+    try:
+        results = siteUtils.persist_reb_info(results)
+    except RuntimeError as eobj:
+        print(eobj)
+        pass
     lcatr.schema.write_file(results)
     lcatr.schema.validate_file()
 

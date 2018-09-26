@@ -26,7 +26,14 @@ class SubsystemDecorator(object):
     def synchCommand(self, *args):
         "Decorator method for a synchronous command."
         self._log_command(args)
-        return self.ccs_subsystem.synchCommand(*args)
+        try:
+            int(args[0])
+        except ValueError:
+            # First argument is not an integer, so use new
+            # sendSynchCommand.
+            return self.ccs_subsystem.sendSynchCommand(*args)
+        else:
+            return self.ccs_subsystem.synchCommand(*args)
 
     def asynchCommand(self, *args):
         "Decorator method for an asynchronous command."
@@ -67,6 +74,7 @@ class CcsSubsystems(object):
                 continue
             self.__dict__[key] = SubsystemDecorator(CCS.attachSubsystem(value),
                                                     logger=logger, name=value)
+        self.version_file = version_file
         self._get_version_info(subsystems)
 
     def _get_version_info(self, subsystems):
@@ -101,8 +109,10 @@ class CcsSubsystems(object):
         return CcsVersionInfo(info['Project'], info['Project Version'],
                               info['Source Code Rev'])
 
-    def write_versions(self, outfile):
+    def write_versions(self, outfile=None):
         "Write CCS version information to an output file."
+        if outfile is None:
+            outfile = self.version_file
         with open(outfile, 'w') as output:
             for key, value in self.subsystems.items():
                 output.write('%s = %s\n' % (value.project, value.version))
