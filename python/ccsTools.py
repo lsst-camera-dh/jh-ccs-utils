@@ -153,8 +153,9 @@ def ccsProducer(jobName, ccsScript, ccs_setup_class=None, sys_paths=(),
     configDir = siteUtils.configDir()
     setup = ccs_setup_class('%s/acq.cfg' % configDir, sys_paths=sys_paths)
 
-    result = ccs.syncScriptExecution(siteUtils.jobDirPath(ccsScript), setup(),
-                                     verbose=verbose)
+    full_script_path = siteUtils.jobDirPath(ccsScript, jobName=jobName)
+    result = ccs.syncScriptExecution(full_script_path, setup(), verbose=verbose)
+
     output = open("%s.log" % jobName, "w")
     output.write(result.getOutput())
     output.close()
