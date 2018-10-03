@@ -2,11 +2,15 @@
 Module to supplement the interface between python and the CCS jython
 interpreter.
 """
+from __future__ import print_function
 import os
 import glob
 import shutil
 from collections import OrderedDict
-import ConfigParser
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 from PythonBinding import CcsJythonInterpreter
 import lcatr.schema
 import siteUtils
@@ -36,18 +40,18 @@ class CcsSetup(OrderedDict):
         self['LSSTID'] = siteUtils.getLSSTId()
         try:
             self['RUNNUM'] = siteUtils.getRunNumber()
-        except StandardError:
+        except Exception:
             self['RUNNUM'] = "no_lcatr_run_number"
 
         self['ts'] = os.getenv('CCS_TS', default='ts')
         self['archon'] = os.getenv('CCS_ARCHON', default='archon')
 
         # The following are only available for certain contexts.
-        if os.environ.has_key('CCS_VAC_OUTLET'):
+        if 'CCS_VAC_OUTLET' in os.environ:
             self['vac_outlet'] = os.getenv('CCS_VAC_OUTLET')
-        if os.environ.has_key('CCS_CRYO_OUTLET'):
+        if 'CCS_CRYO_OUTLET' in os.environ:
             self['cryo_outlet'] = os.getenv('CCS_CRYO_OUTLET')
-        if os.environ.has_key('CCS_PUMP_OUTLET'):
+        if 'CCS_PUMP_OUTLET' in os.environ:
             self['pump_outlet'] = os.getenv('CCS_PUMP_OUTLET')
 
         self._read(os.path.join(siteUtils.getJobDir(), configFile))
@@ -203,11 +207,11 @@ def ccs_subsystem_mapping(config_file=None, section='ccs_subsystems'):
     dict : A dictionary containing the mapping.
     """
     if config_file is None:
-        if os.environ.has_key('LCATR_CCS_SUBSYSTEM_CONFIG'):
+        if 'LCATR_CCS_SUBSYSTEM_CONFIG' in os.environ:
             config_file = os.environ['LCATR_CCS_SUBSYSTEM_CONFIG']
         else:
             return None
-    parser = ConfigParser.ConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     parser.read(config_file)
     return OrderedDict([pair for pair in parser.items(section)])

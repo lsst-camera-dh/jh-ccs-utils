@@ -1,6 +1,7 @@
 """
 Site-specific utilities for harnessed jobs.
 """
+from __future__ import print_function
 import os
 import sys
 import glob
@@ -9,7 +10,10 @@ import pickle
 import fnmatch
 from collections import OrderedDict
 import json
-import ConfigParser
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 import matplotlib.pyplot as plt
 import lcatr.schema
 import lcatr.harness.helpers
@@ -24,10 +28,10 @@ def getCCDNames():
         raise RuntimeError('cannot determine top-level data directory')
     limsurl = os.getenv('LCATR_LIMS_URL', default='')
     if '/Prod' in limsurl:
-        print "Connecting to eTraveler Prod"
+        print("Connecting to eTraveler Prod")
         conn = Connection('homer', 'Prod', prodServer=False)
     else:
-        print "Connecting to eTraveler Dev"
+        print("Connecting to eTraveler Dev")
         conn = Connection('homer', 'Dev', prodServer=False)
     if not conn:
         raise RuntimeError('unable to authenticate')
@@ -39,7 +43,7 @@ def getCCDNames():
         rsp = conn.getHardwareHierarchy(experimentSN=getUnitId(),
                                         htype=getUnitType(),
                                         noBatched='false')
-        print "Results from getHardwareHierarchy unfiltered:"
+        print("Results from getHardwareHierarchy unfiltered:")
         iDict = 0
         for d in rsp:
 #            print('Examining array element %d' % (iDict))
@@ -55,39 +59,39 @@ def getCCDNames():
                     ('itl-ccd' in str(d[k].lower()) or
                      'e2v-ccd' in str(d[k].lower()))):
                     isaccd = True
-                    print "found CCD specs"
+                    print("found CCD specs")
                 if isaccd and 'child_experimentSN' in str(k):
                     ccd_sn = str(d[k])
-                    print "CCD SN = %s" % ccd_sn
+                    print("CCD SN = %s" % ccd_sn)
                 if isaccd and 'slotName' in str(k):
                     ccd_slot = str(d[k])
-                    print "slot = %s" % ccd_slot
+                    print("slot = %s" % ccd_slot)
                 if isaccd and 'child_hardwareTypeName' in str(k):
                     ccd_htype = str(d[k])
                 if (isaccd and ccd_sn != "" and ccd_htype != "" and
                     not got_ccd_manu):
-                    print "trying to get Manufacturer ID for ccd_sn=%s , ccd_htype=%s" % (ccd_sn, ccd_htype)
+                    print("trying to get Manufacturer ID for ccd_sn=%s , ccd_htype=%s" % (ccd_sn, ccd_htype))
                     try:
                         ccd_manu_sn = conn.getManufacturerId(experimentSN=ccd_sn,
                                                              htype=ccd_htype)
-                        print 'Manufacturer ID: ', ccd_manu_sn
+                        print('Manufacturer ID: ', ccd_manu_sn)
                         got_ccd_manu = True
                     except ValueError as eobj:
-                        print 'Operation failed with ValueError:', eobj
+                        print('Operation failed with ValueError:', eobj)
                     except Exception as eobj:
-                        print 'Operation failed with exception:', eobj
+                        print('Operation failed with exception:', eobj)
                         sys.exit(1)
             iDict += 1
             if isaccd:
                 ccdnames[ccd_slot] = ccd_sn
                 ccdmanunames[ccd_slot] = ccd_manu_sn
     except Exception as eobj:
-        print 'Operation failed with exception: '
-        print eobj
+        print('Operation failed with exception: ')
+        print(str(eobj))
         sys.exit(1)
 
-    print "Returning the following list of CCD names and locations"
-    print "ccdnames"
+    print("Returning the following list of CCD names and locations")
+    print("ccdnames")
     return ccdnames, ccdmanunames
 
 #examining array element 15
@@ -157,10 +161,10 @@ def getProcessName(jobName=None):
     else:
         myJobName = jobName
 
-    if os.environ.has_key('LCATR_PROCESS_NAME_PREFIX'):
+    if 'LCATR_PROCESS_NAME_PREFIX' in os.environ:
         myJobName = '_'.join((os.environ['LCATR_PROCESS_NAME_PREFIX'],
                               myJobName))
-    if os.environ.has_key('LCATR_PROCESS_NAME_SUFFIX'):
+    if 'LCATR_PROCESS_NAME_SUFFIX' in os.environ:
         myJobName = '_'.join((myJobName,
                               os.environ['LCATR_PROCESS_NAME_SUFFIX']))
     return myJobName
@@ -213,12 +217,12 @@ def datacatalog_query(query, folder=None, site=None):
 
 def print_file_list(description, file_list, use_basename=False):
     if description is not None:
-        print description
+        print(description)
     for item in file_list:
         if use_basename:
-            print "  ", os.path.basename(item)
+            print("  ", os.path.basename(item))
         else:
-            print "  ", item
+            print("  ", item)
     sys.stdout.flush()
 
 def extractJobId(datacat_path):
@@ -238,7 +242,7 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
     for item in datasets.full_paths():
         if fnmatch.fnmatch(os.path.basename(item), pattern):
             my_job_id = extractJobId(item)
-            if not file_lists.has_key(my_job_id):
+            if my_job_id not in file_lists:
                 file_lists[my_job_id] = []
             file_lists[my_job_id].append(item)
     if job_id is None:
@@ -262,7 +266,7 @@ def packageVersions(versions_filename='installed_versions.txt'):
     versions_file = os.path.join(os.environ['INST_DIR'], versions_filename)
     if not os.path.isfile(versions_file):
         return []
-    parser = ConfigParser.ConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     parser.read(versions_file)
     results = []
@@ -318,7 +322,7 @@ def jobInfo():
 class Parfile(dict):
     def __init__(self, infile, section):
         super(Parfile, self).__init__()
-        parser = ConfigParser.ConfigParser()
+        parser = configparser.ConfigParser()
         parser.read(infile)
         for key, value in parser.items(section):
             self[key] = cast(value)
@@ -351,7 +355,7 @@ def get_prerequisite_job_id(pattern, jobname=None, paths=None,
     # The job id is supposed to be the name of the lowest-level folder
     # containing the requested files.
     #
-    print files[0]
+    print(files[0])
     job_id = os.path.split(os.path.split(files[0])[0])[1]
     return job_id
 
@@ -410,8 +414,8 @@ def make_png_file(callback, png_file, *args, **kwds):
         plt.savefig(png_file)
         return result
     except Exception as eobj:
-        print "Exception raised while creating %s:" % png_file
-        print eobj
+        print("Exception raised while creating %s:" % png_file)
+        print(str(eobj))
     finally:
         plt.clf()
 

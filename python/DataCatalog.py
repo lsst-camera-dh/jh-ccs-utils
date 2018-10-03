@@ -11,7 +11,7 @@ remote_hosts = {'SLAC' : 'rhel6-64.slac.stanford.edu'}
 
 def _get_job_id(dataset):
     folder = os.path.split(dataset.path)[0]
-    return str(os.path.split(folder)[1]) 
+    return str(os.path.split(folder)[1])
 
 def _get_job_name(dataset):
     "Get the name of the harnessed job from the Data Catalog folder name."
@@ -62,9 +62,9 @@ class DatasetList(list):
                  job_id=None, job_name=None, clobber=False):
         user_host = '@'.join((self.login, remote_hosts[site]))
         if nfiles is not None:
-            print "Downloading the first %i files:\n" % nfiles
+            print("Downloading the first %i files:\n" % nfiles)
         if dryrun:
-            print "Dry run. The following commands would be executed:\n"
+            print("Dry run. The following commands would be executed:\n")
         my_datasets = []
         accept = _get_filter(job_id=job_id, job_name=job_name)
         for dataset in self[:nfiles]:
@@ -83,14 +83,14 @@ class DatasetList(list):
                 if location.site == site:
                     command = "scp %s:%s %s" \
                               % (user_host, location.resource, output)
-                    print command
+                    print(command)
                     if not dryrun:
                         if os.path.isfile(output) and clobber:
                             os.remove(output)
                         if not os.path.isfile(output):
                             subprocess.call(command, shell=True)
                         else:
-                            print "%s already exists." % output
+                            print("%s already exists." % output)
                     break  # Just need one location at this site.
 
 class DataCatalogException(RuntimeError):
@@ -130,10 +130,10 @@ class DataCatalog(object):
                 pattern_path = my_folder.rstrip('/')
             try:
                 resp = self.client.search(pattern_path, query=query)
-            except datacat.error.DcException, eobj:
-                print "Caught datacat.error.DcException:"
-                print eobj
-                raise eobj
+            except datacat.error.DcException as eobj:
+                print("Caught datacat.error.DcException:")
+                print(str(eobj))
+                raise
             if resp:
                 # resp has data, so no need to try remaining search patterns.
                 break
@@ -143,10 +143,10 @@ class DataCatalog(object):
 #                resp = self.client.search(folder, query=query)
 #            else:
 #                resp = self.client.search(self.folder, query=query)
-#        except datacat.error.DcException, eobj:
-#            print "Caught datacat.error.DcException:"
-#            print eobj.raw
-#            raise eobj
+#        except datacat.error.DcException as eobj:
+#            print("Caught datacat.error.DcException:")
+#            print(str(eobj.raw))
+#            raise
         return DatasetList(resp, self, job_id=job_id, job_name=job_name)
 
 if __name__ == '__main__':
@@ -157,13 +157,13 @@ if __name__ == '__main__':
     datacatalog = DataCatalog(folder=folder, experiment='LSST', site=site)
 
     datasets = datacatalog.find_datasets(query)
-    print "%i datasets found\n" % len(datasets)
+    print("%i datasets found\n" % len(datasets))
 
     nfiles = 5
-    print "File paths for first %i files at %s:" % (nfiles, site)
+    print("File paths for first %i files at %s:" % (nfiles, site))
     for item in datasets.full_paths()[:nfiles]:
-        print item
+        print(item)
 
-    print
+    print()
 
     datasets.download(dryrun=True, clobber=False, nfiles=nfiles)
