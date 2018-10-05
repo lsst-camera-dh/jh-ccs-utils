@@ -41,7 +41,7 @@ class CcsJythonInterpreter:
             CcsJythonInterpreter.host = host;
         try:
             self.socketConnection = CcsJythonInterpreter.__establishSocketConnectionToCcsJythonInterpreter__();
-            print 'Initialized connection to CCS Python interpreter on on host ', CcsJythonInterpreter.host,':',CcsJythonInterpreter.port;
+            print('Initialized connection to CCS Python interpreter on on host ', CcsJythonInterpreter.host,':',CcsJythonInterpreter.port)
         except :
             raise CcsException("Could not establish a connection with CCS Python Interpreter on host "+CcsJythonInterpreter.host+":"+str(CcsJythonInterpreter.port));
 
@@ -83,14 +83,14 @@ class CcsJythonInterpreter:
 
     def syncScriptExecution(self, fileName, setup_commands=(), verbose=False):
         if verbose and setup_commands:
-            print "Executing setup commands for", fileName
+            print("Executing setup commands for", fileName)
         for command in setup_commands:
             if verbose:
-                print command
+                print(command)
             self.syncExecution(command)
 
         if verbose:
-            print "Executing %s..." % fileName
+            print("Executing %s..." % fileName)
         fo = open(fileName, "r");
         fileContent = fo.read();
         fo.close();
@@ -144,4 +144,4 @@ class _CcsPythonExecutorThread:
             if "doneExecution:"+self.threadId in output:
                 self.running = False;
                 self.executionOutput = self.executionOutput.replace("doneExecution:"+self.threadId+"\n","");
-        self.outputThread._Thread__stop();
+        self.outputThread._stop()

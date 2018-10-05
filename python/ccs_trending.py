@@ -7,7 +7,10 @@ import xml.dom.minidom as minidom
 import time
 import datetime
 from collections import OrderedDict
-import ConfigParser
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mds
@@ -35,7 +38,7 @@ def ccs_trending_config(config_file):
     if not os.path.isfile(config_file):
         raise RuntimeError("ccs_trending_config -- File not found: %s"
                            % config_file)
-    cp = ConfigParser.SafeConfigParser()
+    cp = configparser.SafeConfigParser()
     cp.optionxform = str
     cp.read(config_file)
     return cp
@@ -231,8 +234,8 @@ class TrendingPlotter(object):
         try:
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1.01),
                       fontsize=legendfontsize)
-        except StandardError as eobj:
-            print("StandardError caught in TrendingPlotter.plot:")
+        except Exception as eobj:
+            print("Exception caught in TrendingPlotter.plot:")
             print(eobj)
         return fig
 
