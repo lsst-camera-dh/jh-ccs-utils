@@ -141,8 +141,8 @@ class CcsRaftSetup(CcsSetup):
             self.set_item('sequence_file', self['e2v_seqfile'])
         else:
             raise RuntimeError('Invalid ccd_type: %s' % ccd_type)
-        shutil.copy2(self['sequence_file'].strip("'"),
-                     self['tsCWD'].strip("'"))
+        shutil.copy(self['sequence_file'].strip("'"),
+                    self['tsCWD'].strip("'"))
 
 
 def ccsProducer(jobName, ccsScript, ccs_setup_class=None, sys_paths=(),
