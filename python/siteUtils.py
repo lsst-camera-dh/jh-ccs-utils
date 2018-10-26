@@ -435,7 +435,8 @@ def persist_png_files(file_pattern, lsst_id, png_files=None,
     if metadata is None:
         metadata = dict()
     md = DataCatalogMetadata(**metadata)
-    png_files = glob.glob(file_pattern) if png_files is None
+    if png_files is None:
+        png_files = glob.glob(file_pattern)
     png_filerefs = []
     for png_file in png_files:
         dp = png_data_product(png_file, lsst_id)
