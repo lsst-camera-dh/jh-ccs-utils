@@ -430,11 +430,13 @@ def png_data_product(pngfile, lsst_num):
         pass
     return pngfile[len(file_prefix)+1:-len('.png')]
 
-def persist_png_files(file_pattern, lsst_id, folder=None, metadata=None):
+def persist_png_files(file_pattern, lsst_id, png_files=None,
+                      folder=None, metadata=None):
     if metadata is None:
         metadata = dict()
     md = DataCatalogMetadata(**metadata)
-    png_files = glob.glob(file_pattern)
+    if png_files is None:
+        png_files = glob.glob(file_pattern)
     png_filerefs = []
     for png_file in png_files:
         dp = png_data_product(png_file, lsst_id)
