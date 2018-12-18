@@ -444,3 +444,40 @@ def persist_png_files(file_pattern, lsst_id, png_files=None,
                                          metadata=md(DATA_PRODUCT=dp,
                                                      LsstId=lsst_id)))
     return png_filerefs
+
+
+def get_job_acq_configs(base_config=None):
+    """
+    Get the config file entries for the desired acquistion from the
+    base config file entry.
+
+    Parameters
+    ----------
+    base_config: str [None]
+        File path to the base config file containing the names of all
+        the config parameters for the run.  If None, then defaults to
+        ${LCATR_CONFIG_DIR}/acq.cfg.
+
+    Returns
+    -------
+    dict: dictionary of config parameters.  Both keys and values are
+        returned as strings, so that clients are responsible for casting
+        values appropriately.
+
+    Notes
+    -----
+    For backwards-compatibility, this code parses each key-value pair
+    rather than using configparser, which has syntax requirements that
+    are not satisfied by existing files.
+    """
+    if base_config is None:
+        base_config = os.path.join(os.environ['LCATR_CONFIG_DIR'], 'acq.cfg'))
+
+    config_dict = dict()
+    with open(base_config, 'r') as fd:
+        for line in fd:
+            if line.startswith('#') or '=' not in line:
+                continue
+            tokens = line.strip().split('=')
+            config_dict[tokens[0].strip()] = tokens[1].strip()
+    return config_dict
