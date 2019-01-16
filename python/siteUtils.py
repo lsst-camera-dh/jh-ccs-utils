@@ -471,7 +471,7 @@ def get_job_acq_configs(base_config=None):
     are not satisfied by existing files.
     """
     if base_config is None:
-        base_config = os.path.join(os.environ['LCATR_CONFIG_DIR'], 'acq.cfg'))
+        base_config = os.path.join(os.environ['LCATR_CONFIG_DIR'], 'acq.cfg')
 
     config_dict = dict()
     with open(base_config, 'r') as fd:
