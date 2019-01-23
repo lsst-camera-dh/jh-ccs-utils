@@ -89,7 +89,7 @@ class CcsSubsystems(object):
             my_subsystem = CCS.attachSubsystem(subsystem)
             reply = my_subsystem.sendSynchCommand(10, 'getDistributionInfo')
             try:
-                result = reply.getResult().toString()
+                result = reply.toString()
                 self.subsystems[subsystem] = self._parse_version_info(result)
             except AttributeError:
                 # Running in python for unit tests.
