@@ -39,7 +39,15 @@ class NullSubsystem(object):
         "Execute a synchronous CCS command."
         return NullResponse(*args)
 
+    def sendSynchCommand(self, *args):
+        "Execute a synchronous CCS command."
+        return NullResponse(*args)
+
     def asynchCommand(self, *args):
+        "Execute an asynchronous CCS command."
+        return NullResponse(*args)
+
+    def sendAsynchCommand(self, *args):
         "Execute an asynchronous CCS command."
         return NullResponse(*args)
 
@@ -89,12 +97,19 @@ class Ts8Proxy(NullSubsystem):
         except KeyError:
             return NullResponse()
 
+    def sendSynchCommand(self, *args):
+        return self.synchCommand(*args)
+
     def asynchCommand(self, *args):
         command = ' '.join([str(x) for x in args])
         try:
             return self.responses[command]
         except KeyError:
             return NullResponse()
+
+    def sendAsynchCommand(self, *args):
+        return self.asynchCommand(*args)
+
 
 class NullResponse(object):
     """

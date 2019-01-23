@@ -23,15 +23,22 @@ class SubsystemDecorator(object):
             command_string = " ".join(["%s" % arg for arg in args])
             self.logger.info(command_string)
 
-    def synchCommand(self, *args):
+    def sendSynchCommand(self, *args):
         "Decorator method for a synchronous command."
         self._log_command(args)
-        return self.ccs_subsystem.synchCommand(*args)
+        return self.ccs_subsystem.sendSynchCommand(*args)
 
-    def asynchCommand(self, *args):
+    def synchCommand(self, *args):
+        return self.sendSynchCommand(*args)
+
+    def sendAsynchCommand(self, *args):
         "Decorator method for an asynchronous command."
         self._log_command(args)
-        return self.ccs_subsystem.asynchCommand(*args)
+        return self.ccs_subsystem.sendAsynchCommand(*args)
+
+    def asynchCommand(self, *args):
+        return self.sendAsynchCommand(*args)
+
 
 CcsVersionInfo = namedtuple('CcsVersionInfo', 'project version rev')
 
@@ -80,7 +87,7 @@ class CcsSubsystems(object):
         self.subsystems = OrderedDict()
         for subsystem in real_subsystems:
             my_subsystem = CCS.attachSubsystem(subsystem)
-            reply = my_subsystem.synchCommand(10, 'getDistributionInfo')
+            reply = my_subsystem.sendSynchCommand(10, 'getDistributionInfo')
             try:
                 result = reply.getResult().toString()
                 self.subsystems[subsystem] = self._parse_version_info(result)

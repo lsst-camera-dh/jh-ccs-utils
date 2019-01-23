@@ -235,7 +235,7 @@ class _SubsystemHandle:
     def sendCommand(self, cmd, arg):
         # A timeout of ten seconds should be more than enough since the subsystem
         # commands just put tasks in a work queue rather than do the work directly.
-        self._subsysHandle.synchCommand(10, cmd, arg)
+        self._subsysHandle.sendSynchCommand(10, cmd, arg)
 
 
 class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):
