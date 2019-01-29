@@ -91,9 +91,11 @@ class CcsSubsystems(object):
         real_subsystems = set([x.split('/')[0] for x in subsystems.values()
                                if x not in self._proxy_subsystems])
         self.subsystems = OrderedDict()
+        timeout = java.time.Duration.ofSeconds(10)
         for subsystem in real_subsystems:
             my_subsystem = CCS.attachSubsystem(subsystem)
-            reply = my_subsystem.sendSynchCommand(10, 'getDistributionInfo')
+            reply \
+                = my_subsystem.sendSynchCommand(timeout, 'getDistributionInfo')
             try:
                 result = reply.toString()
                 self.subsystems[subsystem] = self._parse_version_info(result)
