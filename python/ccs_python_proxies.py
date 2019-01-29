@@ -5,6 +5,7 @@ enable testing.
 import sys
 import logging
 logging.basicConfig(format="%(message)s", level=logging.INFO, stream=sys.stdout)
+logger = logging.getLogger()
 
 class CcsType(object):
     "Python proxy for the org.lsst.ccs.scripting.CCS jython object."
