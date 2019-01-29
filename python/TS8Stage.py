@@ -233,9 +233,8 @@ class _SubsystemHandle:
         self._subsysHandle  = CCS.attachSubsystem(subsystemName)
         CCS.addStatusBusListener(replyHandler, replyHandler.getMessageFilter())
     def sendCommand(self, cmd, arg):
-        # A timeout of ten seconds should be more than enough since the subsystem
-        # commands just put tasks in a work queue rather than do the work directly.
-        self._subsysHandle.sendSynchCommand(10, cmd, arg)
+        # Forward the command to the CCS subsystem.
+        self._subsysHandle.sendSynchCommand(cmd, arg)
 
 
 class _ReplyHandler(MotorReplyListener, ScriptingStatusBusListener):

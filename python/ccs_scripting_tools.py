@@ -87,7 +87,7 @@ class CcsSubsystems(object):
         self.subsystems = OrderedDict()
         for subsystem in real_subsystems:
             my_subsystem = CCS.attachSubsystem(subsystem)
-            reply = my_subsystem.sendSynchCommand(10, 'getDistributionInfo')
+            reply = my_subsystem.sendSynchCommand('getDistributionInfo')
             try:
                 result = reply.toString()
                 self.subsystems[subsystem] = self._parse_version_info(result)
