@@ -1,7 +1,9 @@
 """
 Tools for CCS jython scripts.
 """
+import numbers
 from collections import namedtuple, OrderedDict
+import java.time
 import ccs_python_proxies
 try:
     from org.lsst.ccs.scripting import CCS
@@ -26,7 +28,11 @@ class SubsystemDecorator(object):
     def sendSynchCommand(self, *args):
         "Decorator method for a synchronous command."
         self._log_command(args)
-        return self.ccs_subsystem.sendSynchCommand(*args)
+        if isinstance(args[0], numbers.Number):
+            my_args = [java.time.Duration.ofSeconds(args[0])] + list(args[1:])
+        else:
+            my_args = args
+        return self.ccs_subsystem.sendSynchCommand(*my_args)
 
     def synchCommand(self, *args):
         return self.sendSynchCommand(*args)

@@ -2,6 +2,10 @@
 Do-nothing python versions of CCS jython objects and classes to
 enable testing.
 """
+import sys
+import logging
+logging.basicConfig(format="%(message)s", level=logging.INFO, stream=sys.stdout)
+
 class CcsType(object):
     "Python proxy for the org.lsst.ccs.scripting.CCS jython object."
     def __init__(self):
@@ -39,18 +43,22 @@ class NullSubsystem(object):
 
     def synchCommand(self, *args):
         "Execute a synchronous CCS command."
+        logger.debug("Inside NullSubsystem.synchCommand")
         return _NullResponse
 
     def sendSynchCommand(self, *args):
         "Execute a synchronous CCS command."
+        logger.debug("Inside NullSubsystem.sendSynchCommand")
         return _NullResponse
 
     def asynchCommand(self, *args):
         "Execute an asynchronous CCS command."
+        logger.debug("Inside NullSubsystem.asynchCommand")
         return _NullResponse
 
     def sendAsynchCommand(self, *args):
         "Execute an asynchronous CCS command."
+        logger.debug("Inside NullSubsystem.sendAsynchCommand")
         return _NullResponse
 
 class Ts8Proxy(NullSubsystem):
@@ -95,22 +103,26 @@ class Ts8Proxy(NullSubsystem):
 
     def synchCommand(self, *args):
         command = ' '.join([str(x) for x in args[1:]])
+        logger.debug("Inside Ts8Proxy.synchCommand")
         try:
             return self.responses[command]
         except KeyError:
             return _NullResponse
 
     def sendSynchCommand(self, *args):
+        logger.debug("Inside Ts8Proxy.sendSynchCommand")
         return self.synchCommand(*args)
 
     def asynchCommand(self, *args):
         command = ' '.join([str(x) for x in args])
+        logger.debug("Inside Ts8Proxy.asynchCommand")
         try:
             return self.responses[command]
         except KeyError:
             return _NullResponse
 
     def sendAsynchCommand(self, *args):
+        logger.debug("Inside Ts8Proxy.sendAsynchCommand")
         return self.asynchCommand(*args)
 
 
