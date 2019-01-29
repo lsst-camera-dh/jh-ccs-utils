@@ -16,9 +16,9 @@ def write_REB_info(ts8sub, outfile='reb_info.txt'):
         The name of the text file to contain the REB info.
         Default: 'reb_info.txt'.
     """
-    reb_names = ts8sub.sendSynchCommand('getREBDeviceNames')
-    fw_vers = ts8sub.sendSynchCommand('getREBHwVersions')
-    SNs = ts8sub.sendSynchCommand('getREBSerialNumbers')
+    reb_names = ts8sub.sendSynchCommand(10, 'getREBDeviceNames')
+    fw_vers = ts8sub.sendSynchCommand(10, 'getREBHwVersions')
+    SNs = ts8sub.sendSynchCommand(10, 'getREBSerialNumbers')
     with open(outfile, 'w') as output:
         for reb_info in zip(reb_names, fw_vers, SNs):
             output.write('%s  %x  %x\n' % reb_info)
@@ -40,13 +40,13 @@ def get_REB_info(ts8sub, rebid):
     namedtuple : (REB device name, firmware version, serial number)
     """
     RebInfo = namedtuple('RebInfo', 'deviceName hwVersion serialNumber'.split())
-    rebids = list(ts8sub.sendSynchCommand('getREBIds'))
+    rebids = list(ts8sub.sendSynchCommand(10, 'getREBIds'))
     rebids[:] = [x % 4 for x in rebids]
-    dev_names = list(ts8sub.sendSynchCommand('getREBDevices'))
-    hw_versions = list(ts8sub.sendSynchCommand('getREBHwVersions'))
+    dev_names = list(ts8sub.sendSynchCommand(10, 'getREBDevices'))
+    hw_versions = list(ts8sub.sendSynchCommand(10, 'getREBHwVersions'))
     serial_numbers \
         = ['%x' % x for x in
-           ts8sub.sendSynchCommand('getREBSerialNumbers')]
+           ts8sub.sendSynchCommand(10, 'getREBSerialNumbers')]
     index = rebids.index(rebid)
     return RebInfo(dev_names[index], hw_versions[index], serial_numbers[index])
 
@@ -72,7 +72,7 @@ def set_ccd_info(ccs_sub, ccd_names, logger):
     harnessed-jobs/python/eolib.EOTS8SetupCCDInfo.
     """
     # Parse the printGeometry output to map CCD values to REBs.
-    geo = ccs_sub.ts8.sendSynchCommand("printGeometry 3")
+    geo = ccs_sub.ts8.sendSynchCommand(2, "printGeometry 3")
     for line in geo.split('\n'):
         # The lines with the CCD IDs and slot names will be of the form
         # '---> R00.Reb2.S20'.  So we'll extract the last three
@@ -87,23 +87,23 @@ def set_ccd_info(ccs_sub, ccd_names, logger):
 
         # Set the LSST serial number.
         command = 'setLsstSerialNumber %s %s' % (ccd_id, sensor.sensor_id)
-        ccs_sub.ts8.sendSynchCommand(command)
+        ccs_sub.ts8.sendSynchCommand(2, command)
 
         # Set the manufacturer serial number.
         command = ('setManufacturerSerialNumber %s %s'
                    % (ccd_id, sensor.manufacturer_sn))
-        ccs_sub.ts8.sendSynchCommand(command)
+        ccs_sub.ts8.sendSynchCommand(2, command)
 
         # Set the CCD temperature.
         reb_id = int(slot[1])
         ccd_num = int(slot[2])
         command = "getChannelValue R00.Reb%d.CCDTemp%d" % (reb_id, ccd_num)
-        ccdtemp = ccs_sub.ts8.sendSynchCommand(command)
+        ccdtemp = ccs_sub.ts8.sendSynchCommand(2, command)
         command = "setMeasuredCCDTemperature %s %s" % (ccd_id, ccdtemp)
-        ccs_sub.ts8.sendSynchCommand(command)
+        ccs_sub.ts8.sendSynchCommand(10, command)
 
         # Set the BSS voltage.
         command = "getChannelValue REB%s.hvbias.VbefSwch"  % reb_id
-        hv = ccs_sub.rebps.sendSynchCommand(command)
+        hv = ccs_sub.rebps.sendSynchCommand(10, command)
         command = "setMeasuredCCDBSS %s %s" % (ccd_id, hv)
-        ccs_sub.ts8.sendSynchCommand(command)
+        ccs_sub.ts8.sendSynchCommand(10, command)
