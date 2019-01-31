@@ -1,7 +1,9 @@
 """
 Tools for CCS jython scripts.
 """
+import numbers
 from collections import namedtuple, OrderedDict
+import java.time
 import ccs_python_proxies
 try:
     from org.lsst.ccs.scripting import CCS
@@ -23,15 +25,26 @@ class SubsystemDecorator(object):
             command_string = " ".join(["%s" % arg for arg in args])
             self.logger.info(command_string)
 
-    def synchCommand(self, *args):
+    def sendSynchCommand(self, *args):
         "Decorator method for a synchronous command."
         self._log_command(args)
-        return self.ccs_subsystem.synchCommand(*args)
+        if isinstance(args[0], numbers.Number):
+            my_args = [java.time.Duration.ofSeconds(args[0])] + list(args[1:])
+        else:
+            my_args = args
+        return self.ccs_subsystem.sendSynchCommand(*my_args)
 
-    def asynchCommand(self, *args):
+    def synchCommand(self, *args):
+        return self.sendSynchCommand(*args)
+
+    def sendAsynchCommand(self, *args):
         "Decorator method for an asynchronous command."
         self._log_command(args)
-        return self.ccs_subsystem.asynchCommand(*args)
+        return self.ccs_subsystem.sendAsynchCommand(*args)
+
+    def asynchCommand(self, *args):
+        return self.sendAsynchCommand(*args)
+
 
 CcsVersionInfo = namedtuple('CcsVersionInfo', 'project version rev')
 
@@ -78,11 +91,13 @@ class CcsSubsystems(object):
         real_subsystems = set([x.split('/')[0] for x in subsystems.values()
                                if x not in self._proxy_subsystems])
         self.subsystems = OrderedDict()
+        timeout = java.time.Duration.ofSeconds(10)
         for subsystem in real_subsystems:
             my_subsystem = CCS.attachSubsystem(subsystem)
-            reply = my_subsystem.synchCommand(10, 'getDistributionInfo')
+            reply \
+                = my_subsystem.sendSynchCommand(timeout, 'getDistributionInfo')
             try:
-                result = reply.getResult().toString()
+                result = reply.toString()
                 self.subsystems[subsystem] = self._parse_version_info(result)
             except AttributeError:
                 # Running in python for unit tests.
