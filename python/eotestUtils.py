@@ -19,7 +19,8 @@ def utc_now_isoformat():
     return datetime.datetime.utcnow().isoformat()
 
 def getSensorGains(jobname='fe55_analysis', sensor_id=None):
-    if os.environ.get('LCATR_USE_UNIT_GAINS', 'False') == 'True':
+    if (os.environ.get('LCATR_USE_UNIT_GAINS', 'False') == 'True'
+        or os.environ.get("LCATR_SKIP_FE55_ANALYSIS", "False") == "True"):
         return {amp: 1 for amp in range(1, 17)}
 
     if sensor_id is None:
