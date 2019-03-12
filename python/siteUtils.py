@@ -292,11 +292,14 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
 
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs'):
-    if 'acq' in jobName and 'LCATR_ACQ_RUN' in os.environ:
+    if (jobname is not None
+        and 'acq' in jobname
+        and 'LCATR_ACQ_RUN' in os.environ):
         run_number = os.environ['LCATR_ACQ_RUN']
-        hj_file_paths = HarnessedJobFilePaths(run_number, user)
-        db_name = os.environ.get('LCATR_ET_DB', 'Prod')
-        file_list = hj_file_paths.get_files(jobName, pattern, db_name=db_name)
+        db_name = os.environ.get('LCATR_ET_DB_NAME', 'Prod')
+        hj_file_paths \
+            = HarnessedJobFilePaths(run_number, user, db_name=db_name)
+        file_list = hj_file_paths.get_files(jobname, pattern)
     else:
         file_list = lcatr.harness.helpers.dependency_glob(pattern,
                                                           jobname=jobname,
