@@ -361,9 +361,13 @@ def persist_reb_info(results, reb_info_file='reb_info.txt'):
 
 def jobInfo():
     results = packageVersions()
+    acq_run = os.environ.get('LCATR_ACQ_RUN', getRunNumber())
+    use_unit_gains = os.environ.get('LCATR_USE_UNIT_GAINS', 'False')
     results.append(lcatr.schema.valid(lcatr.schema.get('job_info'),
                                       job_name=os.environ['LCATR_JOB'],
-                                      job_id=os.environ['LCATR_JOB_ID']))
+                                      job_id=os.environ['LCATR_JOB_ID'],
+                                      acq_run=acq_run,
+                                      use_unit_gains=use_unit_gains))
     return results
 
 class Parfile(dict):

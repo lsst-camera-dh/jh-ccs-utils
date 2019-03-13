@@ -3,5 +3,7 @@
     'schema_name' : 'job_info',
     'schema_version' : 0,
     'job_name' : str,
-    'job_id' : str
+    'job_id' : str,
+    'acq_run' : str,
+    'use_unit_gains' : str
 }
