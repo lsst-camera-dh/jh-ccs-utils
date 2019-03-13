@@ -361,11 +361,13 @@ def persist_reb_info(results, reb_info_file='reb_info.txt'):
 
 def jobInfo():
     results = packageVersions()
-    acq_run = os.environ.get('LCATR_ACQ_RUN', getRunNumber())
-    use_unit_gains = os.environ.get('LCATR_USE_UNIT_GAINS', 'False')
     results.append(lcatr.schema.valid(lcatr.schema.get('job_info'),
                                       job_name=os.environ['LCATR_JOB'],
-                                      job_id=os.environ['LCATR_JOB_ID'],
+                                      job_id=os.environ['LCATR_JOB_ID']))
+    acq_run = os.environ.get('LCATR_ACQ_RUN', getRunNumber())
+    skip_fe55_analysis = os.environ.get('LCATR_SKIP_FE55_ANAYLSIS', 'False')
+    use_unit_gains = os.environ.get('LCATR_USE_UNIT_GAINS', skip_fe55_analysis)
+    results.append(lcatr.schema.valid(lcatr.schema.get('run_info'),
                                       acq_run=acq_run,
                                       use_unit_gains=use_unit_gains))
     return results

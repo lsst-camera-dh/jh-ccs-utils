@@ -1,9 +1,15 @@
 # -*- python -*-
+[
 {
     'schema_name' : 'job_info',
     'schema_version' : 0,
     'job_name' : str,
-    'job_id' : str,
+    'job_id' : str
+},
+{
+    'schema_name' : 'run_info',
+    'schema_version' : 0,
     'acq_run' : str,
     'use_unit_gains' : str
 }
+]
