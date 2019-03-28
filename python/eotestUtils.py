@@ -221,9 +221,10 @@ class JsonRepackager(object):
             Output filename of FITS file to contain the results as
             written by self.eotest_results.
         """
+        self.has_content = False
         self.eotest_results = sensorTest.EOTestResults(outfile, namps=namps)
 
-    def process_file(self, infile, sensor_id=None):
+    def process_file(self, infile, sensor_id=None, slot=None, raft=None):
         """
         Harvest the EO test results from a summary.lims file.
 
@@ -233,17 +234,30 @@ class JsonRepackager(object):
             A JSON-formatted input file, typically a summary.lims file
             produced by the Job Harness.
         """
-        foo = json.loads(open(infile).read())
-        for result in foo:
-            if ('amp' in result and
-                (sensor_id is None or result['sensor_id'] == sensor_id)):
-                amp = result['amp']
-                for key, value in result.items():
-                    if (key.find('schema') == 0 or
-                        key not in self._key_map.keys()):
-                        continue
-                    self.eotest_results.add_seg_result(amp, self._key_map[key],
-                                                       value)
+        with open(infile) as fd:
+            summary_info = json.load(fd)
+            for result in summary_info:
+                no_ccd_selection = ('sensor_id' not in result
+                                    and ('slot' not in result
+                                         or 'raft' not in result))
+                raft_level_match = ('sensor_id' in result
+                                    and result['sensor_id'] == sensor_id)
+                bot_level_match = ('slot' in result and 'raft' in result
+                                   and result['slot'] == slot
+                                   and result['raft'] == raft)
+                ccd_match = (no_ccd_selection
+                             or raft_level_match
+                             or bot_level_match)
+                if 'amp' in result and ccd_match:
+                    self.has_content = True
+                    amp = result['amp']
+                    for key, value in result.items():
+                        if (key.find('schema') == 0 or
+                            key not in self._key_map.keys()):
+                            continue
+                        self.eotest_results.add_seg_result(amp,
+                                                           self._key_map[key],
+                                                           value)
 
     def write(self, outfile=None, clobber=True):
         """
@@ -258,9 +272,12 @@ class JsonRepackager(object):
             Flag whether to overwrite an existing file with the same name.
             Default: True
         """
+        if not self.has_content:
+            return
         self.eotest_results.write(outfile=outfile, clobber=clobber)
 
-    def process_files(self, summary_files, sensor_id=None):
+    def process_files(self, summary_files, sensor_id=None, slot=None,
+                      raft=None):
         """
         Process a list of summary.lims files.
 
@@ -270,5 +287,4 @@ class JsonRepackager(object):
             A list of summary.lims files.
         """
         for item in summary_files:
-            print("processing", item)
-            self.process_file(item, sensor_id=sensor_id)
+            self.process_file(item, sensor_id=sensor_id, slot=slot, raft=raft)
