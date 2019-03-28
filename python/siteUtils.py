@@ -296,7 +296,7 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
         and 'acq' in jobname
         and 'LCATR_ACQ_RUN' in os.environ):
         run_number = os.environ['LCATR_ACQ_RUN']
-        db_name = os.environ.get('LCATR_ET_DB_NAME', 'Prod')
+        db_name = 'Prod' if not run_number.endswith('D') else 'Dev'
         hj_file_paths \
             = HarnessedJobFilePaths(run_number, user, db_name=db_name)
         file_list = hj_file_paths.get_files(jobname, pattern)
