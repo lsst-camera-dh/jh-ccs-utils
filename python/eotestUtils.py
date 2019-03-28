@@ -250,7 +250,6 @@ class JsonRepackager(object):
                              or bot_level_match)
                 if 'amp' in result and ccd_match:
                     self.has_content = True
-                    print(result)
                     amp = result['amp']
                     for key, value in result.items():
                         if (key.find('schema') == 0 or
@@ -288,5 +287,4 @@ class JsonRepackager(object):
             A list of summary.lims files.
         """
         for item in summary_files:
-            #print("processing", item)
             self.process_file(item, sensor_id=sensor_id, slot=slot, raft=raft)
