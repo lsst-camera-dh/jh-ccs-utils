@@ -125,6 +125,12 @@ class HarnessedJobFilePaths:
         self.user = user
         self.prodServer = prodServer
         self.resp = None
+        try:
+            acq_run = os.environ['LCATR_ACQ_RUN']
+        except KeyError as eobj:
+            pass
+        else:
+            self.query_file_paths(acq_run)
 
     def query_file_paths(self, run):
         """
