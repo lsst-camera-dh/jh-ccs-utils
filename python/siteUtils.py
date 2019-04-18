@@ -143,12 +143,18 @@ class HarnessedJobFilePaths:
 
     def _get_acq_run(self):
         """Get the acquisition run if specified."""
+        if 'LCATR_ACQ_RUN' in os.environ:
+            print("os.environ['LCATR_ACQ_RUN']:", os.environ['LCATR_ACQ_RUN'])
+            self.acq_run = os.environ['LCATR_ACQ_RUN']
+            print("self.acq_run:", self.acq_run)
+            return
         cp = configparser.ConfigParser(allow_no_value=True,
                                        inline_comment_prefixes=('#', ))
         cp.optionxform = str    # allow for case-sensitive keys
         cp.read(get_bot_eo_config_file())
         acq_config = dict(_ for _ in cp.items('ACQUIRE'))
         self.acq_run = acq_config.get('ACQ_RUN', None)
+        os.environ['LCATR_ACQ_RUN'] = self.acq_run
 
     def query_file_paths(self, run):
         """
@@ -331,6 +337,8 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs', acq_jobname=None):
     global HJ_FILEPATH_SERVER
+    if '_acq' in jobname:
+        acq_jobname = jobname
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
     else:
