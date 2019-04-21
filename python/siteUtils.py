@@ -9,7 +9,8 @@ import glob
 import shutil
 import pickle
 import fnmatch
-from collections import OrderedDict
+import pandas as pd
+from collections import OrderedDict, defaultdict
 import json
 try:
     import ConfigParser as configparser
@@ -105,6 +106,46 @@ def getCCDNames():
 #For key parent_id value is 704
 #For key child_id value is 756
 #For key slotName value is S20
+
+
+
+class ETResults(dict):
+    """
+    dict subclass to retrieve and provided access to harnessed job
+    results from the eT database for a specified run.
+
+    The keys are the schema names and each dict value is a pandas
+    dataframe containing the results with a column for each schema
+    entry.
+    """
+    def __init__(self, run, user='ccs', prodServer=True):
+        """
+        Parameters
+        ----------
+        run: str
+            Run number.  If it ends in 'D', the Dev database will be
+            queried.
+        user: str ['ccs']
+            User id to pass to the etravelerAPI.connection.Connnection
+            initializer.
+        prodServer: bool [True]
+            Flag to use the prod or dev eT server.
+        """
+        super(ETResults, self).__init__()
+        db_name = 'Dev' if run.endswith('D') else 'Prod'
+        conn = Connection(user, db_name, prodServer=prodServer)
+        self.results = conn.getRunResults(run=run)
+        self._extract_schema_values()
+
+    def _extract_schema_values(self):
+        steps = self.results['steps']
+        for jobname, schema_data in steps.items():
+            for schema_name, entries in schema_data.items():
+                schema_data = defaultdict(list)
+                for entry in entries[1:]:
+                    for colname, value in entry.items():
+                        schema_data[colname].append(value)
+                self[schema_name] = pd.DataFrame(data=schema_data)
 
 
 def get_bot_eo_config_file():
