@@ -344,7 +344,7 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs', acq_jobname=None):
     global HJ_FILEPATH_SERVER
-    if '_acq' in jobname:
+    if jobname is not None and '_acq' in jobname:
         acq_jobname = jobname
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
