@@ -195,6 +195,7 @@ class JsonRepackager(object):
                      ('dark_pixels', 'NUM_DARK_PIXELS'),
                      ('dark_columns', 'NUM_DARK_COLUMNS'),
                      ('dark_current_95CL', 'DARK_CURRENT_95'),
+                     ('dark_current_median', 'DARK_CURRENT_MEDIAN'),
                      ('num_traps', 'NUM_TRAPS'),
                      ('cti_low_serial', 'CTI_LOW_SERIAL'),
                      ('cti_low_serial_error', 'CTI_LOW_SERIAL_ERROR'),
