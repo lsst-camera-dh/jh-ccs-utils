@@ -138,7 +138,14 @@ class HarnessedJobFilePaths:
         self.user = user
         self.prodServer = prodServer
         self.resp = None
-        self._get_acq_run()
+        try:
+            self._get_acq_run()
+        except:
+            # The run number is not set by in lcatr.cfg nor in the
+            # bot_eo_config_file, so by setting to None, the
+            # `dependency_glob` function will use the current run
+            # number.
+            self.acq_run = None
         self.query_file_paths(self.acq_run)
 
     def _get_acq_run(self):
@@ -337,7 +344,7 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs', acq_jobname=None):
     global HJ_FILEPATH_SERVER
-    if '_acq' in jobname:
+    if jobname is not None and '_acq' in jobname:
         acq_jobname = jobname
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
