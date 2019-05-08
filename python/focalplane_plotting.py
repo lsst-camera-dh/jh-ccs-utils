@@ -8,7 +8,7 @@ import lsst.afw.geom as afw_geom
 from lsst.afw import cameraGeom
 from lsst.obs.lsst.imsim import ImsimMapper
 
-__all__ = ['plot_amp_boundaries', 'plot_det']
+__all__ = ['plot_amp_boundaries', 'plot_det', 'plot_focal_plane']
 
 
 def get_amp_patches(det):
@@ -95,3 +95,25 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot):
     patches = get_amp_patches(det)
     pc = PatchCollection(patches, facecolors=facecolors)
     ax.add_collection(pc)
+
+
+def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
+                     x_range=(-325, 325), y_range=(-325, 325),
+                     yscale=1):
+    if camera is None:
+        camera = ImsimMapper().camera
+    plot_amp_boundaries(ax)
+    ymax = None
+    for det_name, amp_values in amp_data.items():
+        plot_det(ax, camera[det_name], amp_values, cm=cm)
+        max_amp_value = max(amp_values.values())
+        if ymax is None or ymax < max_amp_value:
+            ymax = max_amp_value
+    plt.xlim(*x_range)
+    plt.ylim(*y_range)
+    plt.xlabel('y (mm)')
+    plt.ylabel('x (mm)')
+    norm = plt.Normalize(vmin=0, vmax=yscale*ymax)
+    sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
+    sm.set_array([])
+    plt.colorbar(sm)
