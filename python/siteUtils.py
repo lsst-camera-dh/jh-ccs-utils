@@ -9,6 +9,7 @@ import glob
 import shutil
 import pickle
 import fnmatch
+import warnings
 import pandas as pd
 from collections import OrderedDict, defaultdict
 import json
@@ -95,18 +96,6 @@ def getCCDNames():
     print("Returning the following list of CCD names and locations")
     print("ccdnames")
     return ccdnames, ccdmanunames
-
-#examining array element 15
-#For key child_hardwareTypeName value is ITL-CCD
-#For key parent_experimentSN value is LCA-10753_RSA-002_CTE_ETU
-#For key level value is 0
-#For key relationshipTypeName value is RSA_contains_ITL-CCDs
-#For key child_experimentSN value is ITL-NULL5_CTE-ETU
-#For key parent_hardwareTypeName value is LCA-10753_RSA
-#For key parent_id value is 704
-#For key child_id value is 756
-#For key slotName value is S20
-
 
 
 class ETResults(dict):
@@ -235,7 +224,9 @@ class HarnessedJobFilePaths:
 
 try:
     HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
-except:
+except KeyError as eobj:
+    warnings.warn("HJ_FILEPATH_SERVER object not created:\nKeyError for "
+                  + str(eobj))
     pass
 
 
