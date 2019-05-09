@@ -20,7 +20,6 @@ def get_amp_patches(det, amps=None):
     ----------
     det: `lsst.afw.cameraGeom.detector.detector.Detector`
         Detector object.
-
     amps: container-type object [None]
         Python container that can be queried like `'C01 in amps'`
         to see if a particular channel is included for plotting.
@@ -95,7 +94,7 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None):
         Colormap used to render amplifier values.
     z_range: 2-tuple of floats
         Minimum and maximum values into which to map the unit interval
-        for the color map.  Value are mapped as
+        for the color map.  Values are mapped using
         max(0, min(1, (amp_value - z_range[0])/(z_range[1] - z_range[0])))
         If None, then use
         z_range = (min(amp_values.values()), max(amp_values.values()))
@@ -118,8 +117,39 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None):
 
 
 def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
-                     x_range=(-325, 325), y_range=(-325, 325),
-                     zscale=1, z_range=None):
+                     x_range=(-325, 325), y_range=(-325, 325), z_range=None):
+    """
+    Make a "heat map" plot of the focalplane using per-amplifier values.
+
+    Parameters
+    ----------
+    ax: `matplotlib.Axes`
+        Axes object used to render the patch collection containing
+        the amplifier boundary Rectangles.
+    amp_data: dict of dict of floats
+        Dictionary of dictionary of amplifier values to render,
+        keyed by detector name, e.g., 'R01_S00' and then by channel ID,
+        e.g., 'C00'.
+    camera: `lsst.afw.cameraGeom.camera.camera.Camera` [None]
+        Camera object containing the detector info. If None, use
+        `lsst.obs.lsst.imsim.ImsimMapper().camera`
+    cm: `matplotlib.colors.Colormap`
+        Colormap used to render amplifier values.
+    x_range: tuple [(-325, 325)]
+        Focalplane plotting region in x-direction in units of mm.
+    y_range: tuple [(-325, 325)]
+        Focalplane plotting region in y-direction in units of mm.
+    z_range: 2-tuple of floats
+        Minimum and maximum values into which to map the unit interval
+        for the color map.  Values are mapped using
+        max(0, min(1, (amp_value - z_range[0])/(z_range[1] - z_range[0])))
+        If None, then use
+        z_range = (min(amp_values.values()), max(amp_values.values()))
+
+    Returns
+    -------
+    None
+    """
     if camera is None:
         camera = ImsimMapper().camera
     plot_amp_boundaries(ax)
