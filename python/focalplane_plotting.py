@@ -11,7 +11,7 @@ from lsst.obs.lsst.imsim import ImsimMapper
 __all__ = ['plot_amp_boundaries', 'plot_det', 'plot_focal_plane']
 
 
-def get_amp_patches(det):
+def get_amp_patches(det, amps=None):
     """
     Return a list of Rectangle patches in focalplane coordinates
     corresponding to the amplifier segments in a detector object.
@@ -20,6 +20,11 @@ def get_amp_patches(det):
     ----------
     det: `lsst.afw.cameraGeom.detector.detector.Detector`
         Detector object.
+
+    amps: container-type object [None]
+        Python container that can be queried like `'C01 in amps'`
+        to see if a particular channel is included for plotting.
+        If None, then use all channels in det.
 
     Returns
     -------
@@ -30,6 +35,8 @@ def get_amp_patches(det):
     dy, dx = bbox.getHeight(), bbox.getWidth()
     patches = []
     for amp in det:
+        if amps is not None and amp.getName() not in amps:
+            continue
         j, i = tuple(int(_) for _ in amp.getName()[1:])
         y, x = j*dy, i*dx
         x0, y0 = transform.applyForward(afw_geom.Point2D(x, y))
@@ -69,7 +76,7 @@ def plot_amp_boundaries(ax, camera=None, edgecolor='blue', facecolor='white'):
     ax.add_collection(pc)
 
 
-def plot_det(ax, det, amp_values, cm=plt.cm.hot):
+def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None):
     """
     Plot the amplifiers in a detector, rendering each amplier region with
     a color corresponding to its assigned value.
@@ -86,13 +93,26 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot):
         e.g., 'C00', 'C01', etc.
     cm: `matplotlib.colors.Colormap`
         Colormap used to render amplifier values.
+    z_range: 2-tuple of floats
+        Minimum and maximum values into which to map the unit interval
+        for the color map.  Value are mapped as
+        max(0, min(1, (amp_value - z_range[0])/(z_range[1] - z_range[0])))
+        If None, then use
+        z_range = (min(amp_values.values()), max(amp_values.values()))
 
     Returns
     -------
     None
     """
-    facecolors = [cm(amp_values[amp.getName()]) for amp in det]
-    patches = get_amp_patches(det)
+    if z_range is None:
+        zvals = amp_values.values()
+        z_range = min(zvals), max(zvals)
+    def mapped_value(amp_value):
+        return max(0, min(1, ((amp_value - z_range[0])
+                              /(z_range[1] - z_range[0]))))
+    facecolors = [cm(mapped_value(amp_values[amp.getName()]))
+                  for amp in det if amp.getName() in amp_values]
+    patches = get_amp_patches(det, amp_values)
     pc = PatchCollection(patches, facecolors=facecolors)
     ax.add_collection(pc)
 
@@ -103,21 +123,19 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     if camera is None:
         camera = ImsimMapper().camera
     plot_amp_boundaries(ax)
-    zmax = None
+    if z_range is None:
+        amp_values = []
+        for _ in amp_data.values():
+            amp_values.extend(_.values())
+        z_range = min(amp_values), max(amp_values)
     for det_name, amp_values in amp_data.items():
-        plot_det(ax, camera[det_name], amp_values, cm=cm)
+        plot_det(ax, camera[det_name], amp_values, cm=cm, z_range=z_range)
         max_amp_value = max(amp_values.values())
-        if zmax is None or zmax < max_amp_value:
-            zmax = max_amp_value
     plt.xlim(*x_range)
     plt.ylim(*y_range)
     plt.xlabel('y (mm)')
     plt.ylabel('x (mm)')
-    if z_range is not None:
-        vmin, vmax = z_range
-    else:
-        vmin, vmax= 0, zscale*zmax
-    norm = plt.Normalize(vmin=vmin, vmax=vmax)
+    norm = plt.Normalize(vmin=z_range[0], vmax=z_range[1])
     sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
     plt.colorbar(sm)
