@@ -118,6 +118,7 @@ class ETResults(dict):
     dataframe containing the results with a column for each schema
     entry.
     """
+    amp_names = 'C10 C11 C12 C13 C14 C15 C16 C17 C07 C06 C05 C04 C03 C02 C01 C00'.split()
     def __init__(self, run, user='ccs', prodServer=True):
         """
         Parameters
@@ -146,6 +147,15 @@ class ETResults(dict):
                     for colname, value in entry.items():
                         schema_data[colname].append(value)
                 self[schema_name] = pd.DataFrame(data=schema_data)
+
+    def get_amp_data(self, schema_name, field_name):
+        df = self[schema_name]
+        amp_data = defaultdict(dict)
+        for i in range(len(df)):
+            row = df.iloc[i]
+            det_name = '_'.join((row.raft, row.slot))
+            amp_data[det_name][self.amp_names[row.amp-1]] = row[field_name]
+        return amp_data
 
 
 def get_bot_eo_config_file():
@@ -223,7 +233,10 @@ class HarnessedJobFilePaths:
         return sorted(files)
 
 
-HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
+try:
+    HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
+except:
+    pass
 
 
 def cast(value):

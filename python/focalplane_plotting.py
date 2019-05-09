@@ -99,21 +99,25 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot):
 
 def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
                      x_range=(-325, 325), y_range=(-325, 325),
-                     yscale=1):
+                     zscale=1, z_range=None):
     if camera is None:
         camera = ImsimMapper().camera
     plot_amp_boundaries(ax)
-    ymax = None
+    zmax = None
     for det_name, amp_values in amp_data.items():
         plot_det(ax, camera[det_name], amp_values, cm=cm)
         max_amp_value = max(amp_values.values())
-        if ymax is None or ymax < max_amp_value:
-            ymax = max_amp_value
+        if zmax is None or zmax < max_amp_value:
+            zmax = max_amp_value
     plt.xlim(*x_range)
     plt.ylim(*y_range)
     plt.xlabel('y (mm)')
     plt.ylabel('x (mm)')
-    norm = plt.Normalize(vmin=0, vmax=yscale*ymax)
+    if z_range is not None:
+        vmin, vmax = z_range
+    else:
+        vmin, vmax= 0, zscale*zmax
+    norm = plt.Normalize(vmin=vmin, vmax=vmax)
     sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
     plt.colorbar(sm)
