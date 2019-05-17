@@ -9,7 +9,9 @@ import glob
 import shutil
 import pickle
 import fnmatch
-from collections import OrderedDict
+import warnings
+import pandas as pd
+from collections import OrderedDict, defaultdict
 import json
 try:
     import ConfigParser as configparser
@@ -95,16 +97,54 @@ def getCCDNames():
     print("ccdnames")
     return ccdnames, ccdmanunames
 
-#examining array element 15
-#For key child_hardwareTypeName value is ITL-CCD
-#For key parent_experimentSN value is LCA-10753_RSA-002_CTE_ETU
-#For key level value is 0
-#For key relationshipTypeName value is RSA_contains_ITL-CCDs
-#For key child_experimentSN value is ITL-NULL5_CTE-ETU
-#For key parent_hardwareTypeName value is LCA-10753_RSA
-#For key parent_id value is 704
-#For key child_id value is 756
-#For key slotName value is S20
+
+class ETResults(dict):
+    """
+    dict subclass to retrieve and provided access to harnessed job
+    results from the eT database for a specified run.
+
+    The keys are the schema names and each dict value is a pandas
+    dataframe containing the results with a column for each schema
+    entry.
+    """
+    amp_names = 'C10 C11 C12 C13 C14 C15 C16 C17 C07 C06 C05 C04 C03 C02 C01 C00'.split()
+    def __init__(self, run, user='ccs', prodServer=True):
+        """
+        Parameters
+        ----------
+        run: str
+            Run number.  If it ends in 'D', the Dev database will be
+            queried.
+        user: str ['ccs']
+            User id to pass to the etravelerAPI.connection.Connnection
+            initializer.
+        prodServer: bool [True]
+            Flag to use the prod or dev eT server.
+        """
+        super(ETResults, self).__init__()
+        db_name = 'Dev' if run.endswith('D') else 'Prod'
+        conn = Connection(user, db_name, prodServer=prodServer)
+        self.results = conn.getRunResults(run=run)
+        self._extract_schema_values()
+
+    def _extract_schema_values(self):
+        steps = self.results['steps']
+        for jobname, schema_data in steps.items():
+            for schema_name, entries in schema_data.items():
+                schema_data = defaultdict(list)
+                for entry in entries[1:]:
+                    for colname, value in entry.items():
+                        schema_data[colname].append(value)
+                self[schema_name] = pd.DataFrame(data=schema_data)
+
+    def get_amp_data(self, schema_name, field_name):
+        df = self[schema_name]
+        amp_data = defaultdict(dict)
+        for i in range(len(df)):
+            row = df.iloc[i]
+            det_name = '_'.join((row.raft, row.slot))
+            amp_data[det_name][self.amp_names[row.amp-1]] = row[field_name]
+        return amp_data
 
 
 def get_bot_eo_config_file():
@@ -189,7 +229,12 @@ class HarnessedJobFilePaths:
         return sorted(files)
 
 
-HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
+try:
+    HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
+except KeyError as eobj:
+    warnings.warn("HJ_FILEPATH_SERVER object not created:\nKeyError for "
+                  + str(eobj))
+    pass
 
 
 def cast(value):
@@ -344,7 +389,7 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs', acq_jobname=None):
     global HJ_FILEPATH_SERVER
-    if jobname is not None and '_acq' in jobname:
+    if acq_jobname is None and jobname is not None and '_acq' in jobname:
         acq_jobname = jobname
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
