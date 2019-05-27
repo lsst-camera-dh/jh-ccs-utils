@@ -191,9 +191,7 @@ class HarnessedJobFilePaths:
     def _get_acq_run(self):
         """Get the acquisition run if specified."""
         if 'LCATR_ACQ_RUN' in os.environ:
-            print("os.environ['LCATR_ACQ_RUN']:", os.environ['LCATR_ACQ_RUN'])
             self.acq_run = os.environ['LCATR_ACQ_RUN']
-            print("self.acq_run:", self.acq_run)
             return
         cp = configparser.ConfigParser(allow_no_value=True,
                                        inline_comment_prefixes=('#', ))
@@ -227,14 +225,6 @@ class HarnessedJobFilePaths:
             if re_obj.findall(item['originalPath']):
                 files.append(item['originalPath'])
         return sorted(files)
-
-
-try:
-    HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
-except KeyError as eobj:
-    warnings.warn("HJ_FILEPATH_SERVER object not created:\nKeyError for "
-                  + str(eobj))
-    pass
 
 
 def cast(value):
@@ -388,7 +378,12 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
 
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs', acq_jobname=None):
-    global HJ_FILEPATH_SERVER
+    infile = 'hj_fp_server.pkl'
+    if os.path.isfile(infile):
+        with open(infile, 'rb') as fd:
+            HJ_FILEPATH_SERVER = pickle.load(fd)
+    else:
+        HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
     if acq_jobname is None and jobname is not None and '_acq' in jobname:
         acq_jobname = jobname
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
