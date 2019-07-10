@@ -118,7 +118,7 @@ class CcsPythonExecutorThread:
         return CcsExecutionResult(self)
 
     def listenToSocketOutput(self):
-        re_obj = re.compile(r'.*java.lang.\w*Exception.*')
+        re_obj = re.compile(r'.*java.*[Ee]xception.*')
         self.execution_output = ""
         while self.running:
             try:
