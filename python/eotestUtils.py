@@ -211,6 +211,10 @@ class JsonRepackager(object):
                      ('deferred_charge_stdev', 'DEFERRED_CHARGE_STDEV'),
                      ('ptc_gain', 'PTC_GAIN'),
                      ('ptc_gain_error', 'PTC_GAIN_ERROR'),
+                     ('ptc_a00', 'PTC_A00'),
+                     ('ptc_a00_error', 'PTC_A00_ERROR'),
+                     ('ptc_noise', 'PTC_NOISE'),
+                     ('ptc_noise_error', 'PTC_NOISE_ERROR'),
                      ))
     def __init__(self, outfile='eotest_results.fits', namps=16):
         """
