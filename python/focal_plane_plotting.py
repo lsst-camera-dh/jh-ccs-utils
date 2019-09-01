@@ -8,7 +8,8 @@ import lsst.afw.geom as afw_geom
 from lsst.afw import cameraGeom
 from lsst.obs.lsst.imsim import ImsimMapper
 
-__all__ = ['plot_amp_boundaries', 'plot_det', 'plot_focal_plane']
+__all__ = ['plot_amp_boundaries', 'plot_det', 'plot_focal_plane',
+           'hist_amp_data']
 
 
 def get_amp_patches(det, amps=None):
@@ -169,3 +170,30 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
     plt.colorbar(sm)
+
+def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
+                  label=None):
+    """Histogram focal plane results from per amp data.
+
+    amp_data: dict of dict of floats
+        Dictionary of dictionary of amplifier values to render,
+        keyed by detector name, e.g., 'R01_S00' and then by channel ID,
+        e.g., 'C00'.
+    x_label: str
+        Label of x-axis. Typically, this is the results column name.
+    bins: int [50]
+        Number of histogram bins.
+    hist_range: (float, float) [None]
+        Histogram min and max values.  If None, then used plt.hist default.
+    color: str [None]
+        Histogram color.  If None, then used plt.hist default.
+    label: str [None]
+        Histogram label.
+    """
+    amp_values = []
+    for _ in amp_data.values():
+        amp_values.extend(_.values())
+    plt.hist(amp_values, bins=bins, range=hist_range, histtype='step',
+             color=color, label=label)
+    plt.xlabel(x_label)
+    plt.ylabel('entries / bin')
