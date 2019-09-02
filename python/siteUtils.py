@@ -146,6 +146,13 @@ class ETResults(dict):
             amp_data[det_name][self.amp_names[row.amp-1]] = row[field_name]
         return amp_data
 
+    def get_amp_gains(self, det_name, schema_name='fe55_BOT_analysis'):
+        gain_field = {'fe55_BOT_analysis': 'gain',
+                      'ptc_BOT': 'ptc_gain'}
+        amp_data = self.get_amp_data(schema_name, gain_field[schema_name])
+        return {i+1: amp_data[det_name][amp_name] for i, amp_name
+                in enumerate(amp_data[det_name])}
+
 
 def get_bot_eo_config_file():
     """
