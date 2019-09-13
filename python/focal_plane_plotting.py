@@ -153,7 +153,7 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     """
     if camera is None:
         camera = ImsimMapper().camera
-    plot_amp_boundaries(ax)
+    plot_amp_boundaries(ax, camera=camera)
     if z_range is None:
         amp_values = []
         for _ in amp_data.values():

@@ -98,6 +98,19 @@ def getCCDNames():
     return ccdnames, ccdmanunames
 
 
+def get_lcatr_envs():
+    """
+    Extract the LCATR_* environment variables for updating the runtime
+    environment of the harnessed job code to be executed in
+    parsl_wrapper.
+    """
+    lcatr_envs = dict()
+    for key, value in os.environ.items():
+        if key.startswith('LCATR'):
+            lcatr_envs[key] = value
+    return lcatr_envs
+
+
 class ETResults(dict):
     """
     dict subclass to retrieve and provided access to harnessed job
