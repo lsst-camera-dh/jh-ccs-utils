@@ -10,10 +10,21 @@ try:
 except ImportError:
     import configparser
 import astropy.io.fits as pyfits
+import lsst.eotest.image_utils as imutils
 import lsst.eotest.sensor as sensorTest
 import lcatr.schema
 from lcatr.harness.helpers import dependency_glob
 import siteUtils
+
+def make_median_bias_frame(bias_files, sensor_id, acq_job, skip=1):
+    """Make a median bias frame from bias files."""
+    # Skip the initial frames since the first bias images may have
+    # residual signal from not having been cleared properly.
+    bias_files = sorted(bias_files)[skip:]
+    bias_frame = f'{sensor_id}_{acq_job}_median_bias.fits'
+    amp_geom = sensorTest.makeAmplifierGeometry(bias_files[0])
+    imutils.superbias_file(bias_files, amp_geom.serial_overscan, bias_frame)
+    return bias_frame
 
 def utc_now_isoformat():
     return datetime.datetime.utcnow().isoformat()
