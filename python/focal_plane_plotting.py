@@ -4,7 +4,7 @@ Functions to plot amplifier-level quantities in the LSST focal plane.
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
-import lsst.afw.geom as afw_geom
+import lsst.geom as lsstGeom
 from lsst.afw import cameraGeom
 from lsst.obs.lsst.imsim import ImsimMapper
 
@@ -39,8 +39,8 @@ def get_amp_patches(det, amps=None):
             continue
         j, i = tuple(int(_) for _ in amp.getName()[1:])
         y, x = j*dy, i*dx
-        x0, y0 = transform.applyForward(afw_geom.Point2D(x, y))
-        x1, y1 = transform.applyForward(afw_geom.Point2D(x + dx, y + dy))
+        x0, y0 = transform.applyForward(lsstGeom.Point2D(x, y))
+        x1, y1 = transform.applyForward(lsstGeom.Point2D(x + dx, y + dy))
         patches.append(Rectangle((x0, y0), x1 - x0, y1 - y0))
     return patches
 
