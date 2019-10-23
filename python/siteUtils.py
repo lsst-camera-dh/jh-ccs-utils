@@ -172,17 +172,36 @@ class ETResults(dict):
                 in enumerate(amp_data[det_name])}
 
 
-def get_bot_eo_config_file():
+def get_analysis_run(target_analysis_type, bot_eo_config_file=None):
+    """
+    Get the run number to use for retrieving outputs from a previous
+    run as specific in the 'ANALYSIS_RUNS' section of the BOT EO
+    config file.  If no run was specified, return None.
+    """
+    cp = configparser.ConfigParser(allow_no_value=True,
+                                   inline_comment_prefixes=('#',))
+    cp.optionxform = str
+    cp.read(get_bot_eo_config_file(bot_eo_config_file))
+    if 'ANALYSIS_RUNS' not in cp:
+        return None
+    for analysis_type, run in cp.items('ANALYSIS_RUNS'):
+        if analysis_type.lower() == target_analysis_type.lower():
+            return run
+    return None
+
+
+def get_bot_eo_config_file(bot_eo_config_file=None):
     """
     Retrieve the bot_eo_acq_cfg filename from the acq.cfg file.
     """
+    if bot_eo_config_file is not None:
+        return bot_eo_config_file
     acq_cfg = os.path.join(os.environ['LCATR_CONFIG_DIR'], 'acq.cfg')
     with open(acq_cfg, 'r') as fd:
         for line in fd:
             if line.startswith('bot_eo_acq_cfg'):
-                bot_eo_config_file = line.strip().split('=')[1].strip()
-                break
-    return bot_eo_config_file
+                return line.strip().split('=')[1].strip()
+    return None
 
 
 class HarnessedJobFilePaths:
@@ -202,7 +221,7 @@ class HarnessedJobFilePaths:
         """
         self.user = user
         self.prodServer = prodServer
-        self.resp = None
+        self.resp = dict()
         try:
             self._get_acq_run()
         except:
@@ -237,16 +256,19 @@ class HarnessedJobFilePaths:
             return
         db_name = 'Dev' if run.endswith('D') else 'Prod'
         conn = Connection(self.user, db_name, prodServer=self.prodServer)
-        self.resp = conn.getRunFilepaths(run=str(run))
+        self.resp[run] = conn.getRunFilepaths(run=str(run))
 
-    def get_files(self, jobname, glob_pattern):
+    def get_files(self, jobname, glob_pattern, run=None):
         """
         Get files for a harnessed job using the specified glob pattern.
         """
+        if run is None:
+            run = self.acq_run
+        print('HarnessedJobFilePaths.get_files:', jobname, glob_pattern)
         pattern = glob_pattern.replace('?', '.').replace('*', '.*')
         re_obj = re.compile(pattern)
         files = []
-        for item in self.resp[jobname]:
+        for item in self.resp[run][jobname]:
             if re_obj.findall(item['originalPath']):
                 files.append(item['originalPath'])
         return sorted(files)
@@ -409,10 +431,20 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
             HJ_FILEPATH_SERVER = pickle.load(fd)
     else:
         HJ_FILEPATH_SERVER = HarnessedJobFilePaths()
+
     if acq_jobname is None and jobname is not None and '_acq' in jobname:
         acq_jobname = jobname
+
+    badpixel_run = get_analysis_run('badpixel')
+    bias_run = get_analysis_run('bias')
+
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
+    elif jobname == 'pixel_defects_BOT' and badpixel_run is not None:
+        file_list = HJ_FILEPATH_SERVER.get_files(jobname, pattern,
+                                                 run=badpixel_run)
+    elif jobname == 'bias_frame_BOT' and bias_run is not None:
+        file_list = HJ_FILEPATH_SERVER.get_files(jobname, pattern, run=bias_run)
     else:
         file_list = lcatr.harness.helpers.dependency_glob(pattern,
                                                           jobname=jobname,
