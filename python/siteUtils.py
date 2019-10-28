@@ -336,6 +336,11 @@ def getProcessName(jobName=None):
     if 'LCATR_PROCESS_NAME_SUFFIX' in os.environ:
         myJobName = '_'.join((myJobName,
                               os.environ['LCATR_PROCESS_NAME_SUFFIX']))
+
+    if (os.environ.get('LCATR_RECOVERED_ACQ_DATA', False) == 'True' and
+        myJobName.endswith('_acq')):
+        myJobName += '_recovery'
+
     return myJobName
 
 def getJobDir(jobName=None):
