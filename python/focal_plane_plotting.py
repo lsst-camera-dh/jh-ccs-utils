@@ -140,7 +140,7 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None, use_log10=False):
 
 def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
                      x_range=(-325, 325), y_range=(-325, 325),
-                     z_range=None, use_log10=False, inv_scale_factor='1',
+                     z_range=None, use_log10=False, scale_factor='1',
                      title=''):
     """
     Make a "heat map" plot of the focalplane using per-amplifier values.
@@ -172,8 +172,8 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     use_log10: bool [False]
         If True, then use log10(amp_value) for positive amp_value.  For
         non-positive amp_value, don't render the amp color.
-    inv_scale_factor: str ['1']
-        Inverse scale factor to apply to the colorbar mapping.  This value
+    scale_factor: str ['1']
+        Scale factor to apply to the colorbar mapping.  This value
         will be cast as a float when applied to the tick label values.  It
         is passed as a string so that formatting in the colorbar tick
         labels can be controlled directly by the client code.
@@ -213,17 +213,18 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         ticklabels = [10**_ for _ in ticks]
         colorbar.set_ticks(ticks)
         colorbar.set_ticklabels(ticklabels)
-    elif inv_scale_factor != '1':
+    elif scale_factor != '1':
         ticks = colorbar.get_ticks()
         colorbar.set_ticks(ticks)
-        ticklabels = [_/float(inv_scale_factor) for _ in ticks]
-        ticklabels[-1] = '{} x {}'.format(ticklabels[-1], inv_scale_factor)
+        ticklabels = [_/float(scale_factor) for _ in ticks]
+        ticklabels[-1] = '{} x {}'.format(ticklabels[-1], scale_factor)
         colorbar.set_ticklabels(ticklabels)
     plt.title(title)
     return colorbar
 
 def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
-                  label=None):
+                  label=None, use_log10=False, yscale='log',
+                  scale_factor='1'):
     """Histogram focal plane results from per amp data.
 
     amp_data: dict of dict of floats
@@ -240,11 +241,33 @@ def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
         Histogram color.  If None, then used plt.hist default.
     label: str [None]
         Histogram label.
+    use_log10: bool [False]
+        If True, then use log10(amp_value) for positive amp_value.  For
+        non-positive amp_value, don't render the amp color.
+    yscale: str ['log']
+        Argument to pass to plt.yscale(...).  The options are 'linear', 'log'.
     """
     amp_values = []
     for _ in amp_data.values():
         amp_values.extend(_.values())
+    if use_log10:
+        amp_values = [np.log10(_) for _ in amp_values if _ > 0]
     plt.hist(amp_values, bins=bins, range=hist_range, histtype='step',
              color=color, label=label)
     plt.xlabel(x_label)
     plt.ylabel('entries / bin')
+    plt.yscale(yscale)
+    ax = plt.axes()
+    if use_log10:
+        ticks = sorted(list(set([int(_) for _ in
+                                 np.log10(np.logspace(0, max(amp_values)))])))
+        ticklabels = [10**_ for _ in ticks]
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(ticklabels)
+    elif scale_factor != '1':
+        ticks = [_ for _ in ax.get_xticks()
+                 if (_ >= hist_range[0] and _ <= hist_range[1])]
+        ax.set_xticks(ticks)
+        ticklabels = ['{:.1f}'.format(_/float(scale_factor)) for _ in ticks]
+        ticklabels[-1] += f'\nx {scale_factor}'
+        ax.set_xticklabels(ticklabels)
