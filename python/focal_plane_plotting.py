@@ -4,6 +4,7 @@ Functions to plot amplifier-level quantities in the LSST focal plane.
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
+import numpy as np
 import lsst.geom as lsstGeom
 from lsst.afw import cameraGeom
 from lsst.obs.lsst.imsim import ImsimMapper
@@ -76,7 +77,7 @@ def plot_amp_boundaries(ax, camera=None, edgecolor='blue', facecolor='white'):
     ax.add_collection(pc)
 
 
-def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None):
+def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None, use_log10=False):
     """
     Plot the amplifiers in a detector, rendering each amplier region with
     a color corresponding to its assigned value.
@@ -93,12 +94,15 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None):
         e.g., 'C00', 'C01', etc.
     cm: `matplotlib.colors.Colormap`
         Colormap used to render amplifier values.
-    z_range: 2-tuple of floats
+    z_range: 2-tuple of floats [None]
         Minimum and maximum values into which to map the unit interval
         for the color map.  Values are mapped using
         max(0, min(1, (amp_value - z_range[0])/(z_range[1] - z_range[0])))
         If None, then use
         z_range = (min(amp_values.values()), max(amp_values.values()))
+    use_log10: bool [False]
+        If True, then use log10(amp_value) for positive amp_value.  For
+        non-positive amp_value, don't render the amp color.
 
     Returns
     -------
@@ -110,15 +114,34 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None):
     def mapped_value(amp_value):
         return max(0, min(1, ((amp_value - z_range[0])
                               /(z_range[1] - z_range[0]))))
-    facecolors = [cm(mapped_value(amp_values[amp.getName()]))
-                  for amp in det if amp.getName() in amp_values]
-    patches = get_amp_patches(det, amp_values)
+    my_facecolors = []
+    for amp in det:
+        if amp.getName() not in amp_values:
+            continue
+        if use_log10:
+            if amp_values[amp.getName()] <= 0:
+                my_facecolors.append(None)
+            else:
+                my_facecolors.append(
+                    cm(mapped_value(np.log10(amp_values[amp.getName()]))))
+        else:
+            my_facecolors.append(cm(mapped_value(amp_values[amp.getName()])))
+
+    my_patches = get_amp_patches(det, amp_values)
+    facecolors, patches = [], []
+    for facecolor, patch in zip(my_facecolors, my_patches):
+        if facecolor is not None:
+            facecolors.append(facecolor)
+            patches.append(patch)
+    assert len(facecolors) == len(patches)
     pc = PatchCollection(patches, facecolors=facecolors)
     ax.add_collection(pc)
 
 
 def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
-                     x_range=(-325, 325), y_range=(-325, 325), z_range=None):
+                     x_range=(-325, 325), y_range=(-325, 325),
+                     z_range=None, use_log10=False, scale_factor='1',
+                     title=''):
     """
     Make a "heat map" plot of the focalplane using per-amplifier values.
 
@@ -140,12 +163,23 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         Focalplane plotting region in x-direction in units of mm.
     y_range: tuple [(-325, 325)]
         Focalplane plotting region in y-direction in units of mm.
-    z_range: 2-tuple of floats
+    z_range: 2-tuple of floats [None]
         Minimum and maximum values into which to map the unit interval
         for the color map.  Values are mapped using
         max(0, min(1, (amp_value - z_range[0])/(z_range[1] - z_range[0])))
         If None, then use
         z_range = (min(amp_values.values()), max(amp_values.values()))
+    use_log10: bool [False]
+        If True, then use log10(amp_value) for positive amp_value.  For
+        non-positive amp_value, don't render the amp color.
+    scale_factor: str ['1']
+        Scale factor to apply to the colorbar mapping.  This value
+        will be cast as a float when applied to the tick label values.  It
+        is passed as a string so that formatting in the colorbar tick
+        labels can be controlled directly by the client code.
+        This is not used if use_log10 == True.
+    title: str ['']
+        Title to apply to the plot.
 
     Returns
     -------
@@ -155,12 +189,15 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         camera = ImsimMapper().camera
     plot_amp_boundaries(ax, camera=camera)
     if z_range is None:
-        amp_values = []
+        z_range_values = []
         for _ in amp_data.values():
-            amp_values.extend(_.values())
-        z_range = min(amp_values), max(amp_values)
+            z_range_values.extend(_.values())
+        if use_log10:
+            z_range_values = [np.log10(_) for _ in z_range_values if _ > 0]
+        z_range = min(z_range_values), max(z_range_values)
     for det_name, amp_values in amp_data.items():
-        plot_det(ax, camera[det_name], amp_values, cm=cm, z_range=z_range)
+        plot_det(ax, camera[det_name], amp_values, cm=cm, z_range=z_range,
+                 use_log10=use_log10)
         max_amp_value = max(amp_values.values())
     plt.xlim(*x_range)
     plt.ylim(*y_range)
@@ -169,10 +206,25 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     norm = plt.Normalize(vmin=z_range[0], vmax=z_range[1])
     sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
-    plt.colorbar(sm)
+    colorbar = plt.colorbar(sm)
+    if use_log10:
+        ticks = sorted(list(set([int(_) for _ in
+                                 np.log10(np.logspace(0, z_range[1]))])))
+        ticklabels = [10**_ for _ in ticks]
+        colorbar.set_ticks(ticks)
+        colorbar.set_ticklabels(ticklabels)
+    elif scale_factor != '1':
+        ticks = colorbar.get_ticks()
+        colorbar.set_ticks(ticks)
+        ticklabels = [_/float(scale_factor) for _ in ticks]
+        ticklabels[-1] = '{} x {}'.format(ticklabels[-1], scale_factor)
+        colorbar.set_ticklabels(ticklabels)
+    plt.title(title)
+    return colorbar
 
 def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
-                  label=None):
+                  label=None, use_log10=False, yscale='log',
+                  scale_factor='1'):
     """Histogram focal plane results from per amp data.
 
     amp_data: dict of dict of floats
@@ -189,11 +241,33 @@ def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
         Histogram color.  If None, then used plt.hist default.
     label: str [None]
         Histogram label.
+    use_log10: bool [False]
+        If True, then use log10(amp_value) for positive amp_value.  For
+        non-positive amp_value, don't render the amp color.
+    yscale: str ['log']
+        Argument to pass to plt.yscale(...).  The options are 'linear', 'log'.
     """
     amp_values = []
     for _ in amp_data.values():
         amp_values.extend(_.values())
+    if use_log10:
+        amp_values = [np.log10(_) for _ in amp_values if _ > 0]
     plt.hist(amp_values, bins=bins, range=hist_range, histtype='step',
              color=color, label=label)
     plt.xlabel(x_label)
     plt.ylabel('entries / bin')
+    plt.yscale(yscale)
+    ax = plt.axes()
+    if use_log10:
+        ticks = sorted(list(set([int(_) for _ in
+                                 np.log10(np.logspace(0, max(amp_values)))])))
+        ticklabels = [10**_ for _ in ticks]
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(ticklabels)
+    elif scale_factor != '1':
+        ticks = [_ for _ in ax.get_xticks()
+                 if (_ >= hist_range[0] and _ <= hist_range[1])]
+        ax.set_xticks(ticks)
+        ticklabels = ['{:.1f}'.format(_/float(scale_factor)) for _ in ticks]
+        ticklabels[-1] += f'\nx {scale_factor}'
+        ax.set_xticklabels(ticklabels)
