@@ -181,7 +181,10 @@ def get_analysis_run(target_analysis_type, bot_eo_config_file=None):
     cp = configparser.ConfigParser(allow_no_value=True,
                                    inline_comment_prefixes=('#',))
     cp.optionxform = str
-    cp.read(get_bot_eo_config_file(bot_eo_config_file))
+    bot_eo_config_file = get_bot_eo_config_file(bot_eo_config_file)
+    if bot_eo_config_file is None:
+        return None
+    cp.read(bot_eo_config_file)
     if 'ANALYSIS_RUNS' not in cp:
         return None
     for analysis_type, run in cp.items('ANALYSIS_RUNS'):
