@@ -443,16 +443,16 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
     if acq_jobname is None and jobname is not None and '_acq' in jobname:
         acq_jobname = jobname
 
-    badpixel_run = get_analysis_run('badpixel')
-    bias_run = get_analysis_run('bias')
+    analysis_runs = dict(pixel_defects_BOT=get_analysis_run('badpixel'),
+                         bias_frame_BOT=get_analysis_run('bias'),
+                         flat_pairs_BOT=get_analysis_run('linearity'),
+                         nonlinearity_BOT=get_analysis_run('nonlinearity'))
 
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
-    elif jobname == 'pixel_defects_BOT' and badpixel_run is not None:
+    elif jobname in analysis_runs and analysis_runs[jobname] is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(jobname, pattern,
-                                                 run=badpixel_run)
-    elif jobname == 'bias_frame_BOT' and bias_run is not None:
-        file_list = HJ_FILEPATH_SERVER.get_files(jobname, pattern, run=bias_run)
+                                                 run=analysis_runs[jobname])
     else:
         file_list = lcatr.harness.helpers.dependency_glob(pattern,
                                                           jobname=jobname,
