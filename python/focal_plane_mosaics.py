@@ -9,7 +9,7 @@ import lsst.afw.image as afwImage
 from lsst.afw.cameraGeom import utils as cgu
 import lsst.daf.persistence as dp
 
-__all__ = ['RawImageSource']
+__all__ = ['RawImageSource', 'make_fp_mosaic']
 
 
 class RawImageSource:
