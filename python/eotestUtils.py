@@ -218,6 +218,7 @@ class JsonRepackager(object):
                      ('cti_high_parallel_error', 'CTI_HIGH_PARALLEL_ERROR'),
                      ('full_well', 'FULL_WELL'),
                      ('max_frac_dev', 'MAX_FRAC_DEV'),
+                     ('row_mean_var_slope', 'ROW_MEAN_VAR_SLOPE'),
                      ('deferred_charge_median', 'DEFERRED_CHARGE_MEDIAN'),
                      ('deferred_charge_stdev', 'DEFERRED_CHARGE_STDEV'),
                      ('ptc_gain', 'PTC_GAIN'),
@@ -226,6 +227,11 @@ class JsonRepackager(object):
                      ('ptc_a00_error', 'PTC_A00_ERROR'),
                      ('ptc_noise', 'PTC_NOISE'),
                      ('ptc_noise_error', 'PTC_NOISE_ERROR'),
+                     ('ptc_turnoff', 'PTC_TURNOFF'),
+                     ('bf_xcorr', 'BF_XCORR'),
+                     ('bf_xcorr_err', 'BF_XCORR_ERR'),
+                     ('bf_ycorr', 'BF_YCORR_ERR'),
+                     ('bf_mean', 'BF_MEAN'),
                      ))
     def __init__(self, outfile='eotest_results.fits', namps=16):
         """
