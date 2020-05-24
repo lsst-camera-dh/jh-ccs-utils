@@ -231,6 +231,10 @@ class JsonRepackager(object):
                      ('bf_xcorr', 'BF_XCORR'),
                      ('bf_xcorr_err', 'BF_XCORR_ERR'),
                      ('bf_ycorr', 'BF_YCORR_ERR'),
+                     ('bf_slopex', 'BF_SLOPEX'),
+                     ('bf_slopex_err', 'BF_SLOPEX_ERR'),
+                     ('bf_slopey', 'BF_SLOPEY'),
+                     ('bf_slopey_err', 'BF_SLOPEY_ERR'),
                      ('bf_mean', 'BF_MEAN'),
                      ))
     def __init__(self, outfile='eotest_results.fits', namps=16):
