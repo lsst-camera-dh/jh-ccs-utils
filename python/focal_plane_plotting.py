@@ -112,8 +112,8 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None, use_log10=False):
         zvals = amp_values.values()
         z_range = min(zvals), max(zvals)
     def mapped_value(amp_value):
-        return max(0, min(1, ((amp_value - z_range[0])
-                              /(z_range[1] - z_range[0]))))
+        return max(0, min(1., ((amp_value - z_range[0])
+                               /(z_range[1] - z_range[0]))))
     my_facecolors = []
     for amp in det:
         if amp.getName() not in amp_values:
