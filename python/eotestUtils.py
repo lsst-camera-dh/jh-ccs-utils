@@ -219,6 +219,7 @@ class JsonRepackager(object):
                      ('full_well', 'FULL_WELL'),
                      ('max_frac_dev', 'MAX_FRAC_DEV'),
                      ('row_mean_var_slope', 'ROW_MEAN_VAR_SLOPE'),
+                     ('max_observed_signal', 'MAX_OBSERVED_SIGNAL'),
                      ('deferred_charge_median', 'DEFERRED_CHARGE_MEDIAN'),
                      ('deferred_charge_stdev', 'DEFERRED_CHARGE_STDEV'),
                      ('ptc_gain', 'PTC_GAIN'),
