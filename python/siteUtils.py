@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import lcatr.schema
 import lcatr.harness.helpers
 from eTraveler.clientAPI.connection import Connection
+from camera_components import camera_info
 
 
 def getCCDNames():
@@ -170,6 +171,28 @@ class ETResults(dict):
         amp_data = self.get_amp_data(schema_name, gain_field[schema_name])
         return {i+1: amp_data[det_name][amp_name] for i, amp_name
                 in enumerate(amp_data[det_name])}
+
+
+def extract_amp_data(summary_lims_file, schema_name, field_name,
+                     camera=None):
+    """
+    Extract the per-amp results from the summary.lims file for the
+    desired schema and field.
+    """
+    if camera is None:
+        camera = camera_info.camera_object
+    with open(summary_lims_file) as fd:
+        et_data = json.load(fd)
+    amp_data = defaultdict(dict)
+    for item in et_data:
+        if item['schema_name'] != schema_name:
+            continue
+        det_name = '_'.join((item['raft'], item['slot']))
+        channels = {amp: segment.getName() for amp, segment
+                    in enumerate(camera.get(det_name), 1)}
+        amp = item['amp']
+        amp_data[det_name][channels[amp]] = item[field_name]
+    return amp_data
 
 
 def get_analysis_run(target_analysis_type, bot_eo_config_file=None):
