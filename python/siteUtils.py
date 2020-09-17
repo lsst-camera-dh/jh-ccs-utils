@@ -190,6 +190,11 @@ def extract_amp_data(summary_lims_file, schema_name, field_name,
         det_name = '_'.join((item['raft'], item['slot']))
         channels = {amp: segment.getName() for amp, segment
                     in enumerate(camera.get(det_name), 1)}
+        if len(channels) == 8:
+            # obs_lsst in lsst_distrib v20.0.0 has the order
+            # of channels reversed in its WF sensor detector object,
+            # so invert it here.
+            channels = dict(zip(range(8, 0, -1), channels.values()))
         amp = item['amp']
         amp_data[det_name][channels[amp]] = item[field_name]
     return amp_data
