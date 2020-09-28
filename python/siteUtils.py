@@ -732,11 +732,11 @@ def get_git_commit_info(repo_path):
     (str, str):  Tuple of the git hash and tag.  If the current HEAD
         does not correspond to a tag, return the tag as None.
     '''
-    command = f'cd {package_path}; git rev-parse HEAD'
+    command = f'cd {repo_path}; git rev-parse HEAD'
     git_hash = subprocess.check_output(command, shell=True)\
                          .decode('utf-8').strip()
 
-    command = f'cd {package_path}; git show-ref | tail -1'
+    command = f'cd {repo_path}; git show-ref --tags | tail -1'
     latest_tag = subprocess.check_output(command, shell=True)\
                            .decode('utf-8').strip()
 
