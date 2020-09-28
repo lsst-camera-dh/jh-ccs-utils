@@ -10,6 +10,7 @@ import shutil
 import pickle
 import fnmatch
 import warnings
+import subprocess
 import pandas as pd
 from collections import OrderedDict, defaultdict
 import json
@@ -715,3 +716,11 @@ def get_job_acq_configs(base_config=None):
             tokens = line.strip().split('=')
             config_dict[tokens[0].strip()] = tokens[1].strip()
     return config_dict
+
+
+def get_git_commit_info(package_path):
+    command = f'cd {package_path}; git log -1'
+    output = subprocess.check_output(command, shell=True)
+    return output
+#    for line in output:
+#        print(line.decode('utf-8'))
