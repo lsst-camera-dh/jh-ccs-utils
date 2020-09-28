@@ -718,9 +718,29 @@ def get_job_acq_configs(base_config=None):
     return config_dict
 
 
-def get_git_commit_info(package_path):
-    command = f'cd {package_path}; git log -1'
-    output = subprocess.check_output(command, shell=True)
-    return output
-#    for line in output:
-#        print(line.decode('utf-8'))
+def get_git_commit_info(repo_path):
+    '''
+    Get the git hash for current HEAD of the requested repo path.
+
+    Parameters
+    ----------
+    repo_path: str
+        Path to the git repository.
+
+    Returns
+    -------
+    (str, str):  Tuple of the git hash and tag.  If the current HEAD
+        does not correspond to a tag, return the tag as None.
+    '''
+    command = f'cd {package_path}; git rev-parse HEAD'
+    git_hash = subprocess.check_output(command, shell=True)\
+                         .decode('utf-8').strip()
+
+    command = f'cd {package_path}; git show-ref | tail -1'
+    latest_tag = subprocess.check_output(command, shell=True)\
+                           .decode('utf-8').strip()
+
+    tag = latest_tag.split('/')[-1] if latest_tag.startswith(git_hash) \
+          else None
+
+    return git_hash, tag
