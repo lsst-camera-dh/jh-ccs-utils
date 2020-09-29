@@ -550,7 +550,8 @@ def get_git_commit_info(repo_path, check_status=True):
     repo_path: str
         Path to the git repository.
     check_status: bool [True]
-        If True, then run `git status` to check if the working tree
+        If True, then run `git remote -v` and  `git status` to check
+        that the desired repo is being checked and if the working tree
         has uncommitted changes.
 
     Returns
@@ -560,6 +561,8 @@ def get_git_commit_info(repo_path, check_status=True):
     '''
     if check_status:
         print(repo_path)
+        command = f'cd {repo_path}; git remote -v'
+        print(subprocess.check_output(command, shell=True).decode('utf-8'))
         command = f'cd {repo_path}; git status'
         print(subprocess.check_output(command, shell=True).decode('utf-8'))
         sys.stdout.flush()
