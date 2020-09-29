@@ -1,7 +1,6 @@
 """
 Site-specific utilities for harnessed jobs.
 """
-from __future__ import print_function
 import os
 import sys
 import re
@@ -541,6 +540,44 @@ def persist_reb_info(results, reb_info_file='reb_info.txt'):
         results.append(lcatr.schema.valid(schema, **kwds))
     return results
 
+
+def get_git_commit_info(repo_path, check_status=True):
+    '''
+    Get the git hash for current HEAD of the requested repo path.
+
+    Parameters
+    ----------
+    repo_path: str
+        Path to the git repository.
+    check_status: bool [True]
+        If True, then run `git status` to check if the working tree
+        has uncommitted changes.
+
+    Returns
+    -------
+    (str, str):  Tuple of the git hash and tag.  If the current HEAD
+        does not correspond to a tag, return the tag as None.
+    '''
+    if check_status:
+        print(repo_path)
+        command = f'cd {repo_path}; git status'
+        print(subprocess.check_output(command, shell=True).decode('utf-8'))
+        sys.stdout.flush()
+
+    command = f'cd {repo_path}; git rev-parse HEAD'
+    git_hash = subprocess.check_output(command, shell=True)\
+                         .decode('utf-8').strip()
+
+    command = f'cd {repo_path}; git show-ref --tags | tail -1'
+    latest_tag = subprocess.check_output(command, shell=True)\
+                           .decode('utf-8').strip()
+
+    tag = latest_tag.split('/')[-1] if latest_tag.startswith(git_hash) \
+          else None
+
+    return git_hash, tag
+
+
 def jobInfo():
     results = packageVersions()
     results.append(lcatr.schema.valid(lcatr.schema.get('job_info'),
@@ -552,6 +589,20 @@ def jobInfo():
     results.append(lcatr.schema.valid(lcatr.schema.get('run_info'),
                                       acq_run=acq_run,
                                       use_unit_gains=use_unit_gains))
+
+    # Get fp-scripts repo info
+    git_hash, git_tag = None, None
+    repo_path = os.environ.get('LCATR_FP_SCRIPTS_REPO_DIR', None)
+    if repo_path is not None:
+        try:
+            git_hash, git_tag = get_git_commit_info(repo_path)
+        except Exception as eobj:
+            print('Error encountered retrieving fp-scripts git info:\n', eobj)
+
+    results.append(lcatr.schema.valid(lcatr.schema.get('fp-scripts_info'),
+                                      git_hash=str(git_hash),
+                                      git_tag=str(git_tag)))
+
     return results
 
 class Parfile(dict):
@@ -716,40 +767,3 @@ def get_job_acq_configs(base_config=None):
             tokens = line.strip().split('=')
             config_dict[tokens[0].strip()] = tokens[1].strip()
     return config_dict
-
-
-def get_git_commit_info(repo_path, check_status=True):
-    '''
-    Get the git hash for current HEAD of the requested repo path.
-
-    Parameters
-    ----------
-    repo_path: str
-        Path to the git repository.
-    check_status: bool [True]
-        If True, then run `git status` to check if the working tree
-        has uncommitted changes.
-
-    Returns
-    -------
-    (str, str):  Tuple of the git hash and tag.  If the current HEAD
-        does not correspond to a tag, return the tag as None.
-    '''
-    if check_status:
-        print(repo_path)
-        command = f'cd {repo_path}; git status'
-        print(subprocess.check_output(command, shell=True).decode('utf-8'))
-        sys.stdout.flush()
-
-    command = f'cd {repo_path}; git rev-parse HEAD'
-    git_hash = subprocess.check_output(command, shell=True)\
-                         .decode('utf-8').strip()
-
-    command = f'cd {repo_path}; git show-ref --tags | tail -1'
-    latest_tag = subprocess.check_output(command, shell=True)\
-                           .decode('utf-8').strip()
-
-    tag = latest_tag.split('/')[-1] if latest_tag.startswith(git_hash) \
-          else None
-
-    return git_hash, tag

@@ -11,5 +11,11 @@
     'schema_version' : 0,
     'acq_run' : str,
     'use_unit_gains' : str
+},
+{
+    'schema_name' : 'fp-scripts_info',
+    'schema_version' : 0,
+    'git_hash' : str,
+    'git_tag' : str
 }
 ]
