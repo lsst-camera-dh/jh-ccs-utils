@@ -718,7 +718,7 @@ def get_job_acq_configs(base_config=None):
     return config_dict
 
 
-def get_git_commit_info(repo_path):
+def get_git_commit_info(repo_path, check_status=True):
     '''
     Get the git hash for current HEAD of the requested repo path.
 
@@ -726,12 +726,21 @@ def get_git_commit_info(repo_path):
     ----------
     repo_path: str
         Path to the git repository.
+    check_status: bool [True]
+        If True, then run `git status` to check if the working tree
+        has uncommitted changes.
 
     Returns
     -------
     (str, str):  Tuple of the git hash and tag.  If the current HEAD
         does not correspond to a tag, return the tag as None.
     '''
+    if check_status:
+        print(repo_path)
+        command = f'cd {repo_path}; git status'
+        print(subprocess.check_output(command, shell=True).decode('utf-8'))
+        sys.stdout.flush()
+
     command = f'cd {repo_path}; git rev-parse HEAD'
     git_hash = subprocess.check_output(command, shell=True)\
                          .decode('utf-8').strip()
