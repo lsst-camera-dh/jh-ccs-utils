@@ -459,6 +459,22 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
     return file_list
 
 
+def get_scratch_files(file_list, default_root='/scratch'):
+    run_number = getRunNumber()
+    scratch_root = os.environ.get('LCATR_SCRATCH_DIR', default_root)
+    scratch_dir = os.path.join(scratch_root, 'bot_data', str(run_number))
+    if not os.path.isdir(scratch_dir):
+        return file_list
+    final_list = []
+    for item in file_list:
+        candidate_file = os.path.join(scratch_dir, os.path.basename(item))
+        if os.path.isfile(candidate_file):
+            final_list.append(candidate_file)
+        else:
+            final_list.append(item)
+    return final_list
+
+
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs', acq_jobname=None):
     infile = 'hj_fp_server.pkl'
@@ -485,6 +501,7 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
         file_list = lcatr.harness.helpers.dependency_glob(pattern,
                                                           jobname=jobname,
                                                           paths=paths)
+    file_list = get_scratch_files(file_list)
     if sort:
         file_list = sorted(file_list)
     print_file_list(description, file_list)
