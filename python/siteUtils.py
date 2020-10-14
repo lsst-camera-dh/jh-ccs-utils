@@ -467,7 +467,9 @@ def get_scratch_files(file_list, default_root='/scratch'):
         return file_list
     final_list = []
     for item in file_list:
-        candidate_file = os.path.join(scratch_dir, os.path.basename(item))
+        folder = os.path.basename(os.path.dirname(item))
+        candidate_file = os.path.join(scratch_dir, folder,
+                                      os.path.basename(item))
         if os.path.isfile(candidate_file):
             final_list.append(candidate_file)
         else:
