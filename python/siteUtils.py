@@ -469,8 +469,6 @@ class BadExposureChecker:
         """
         bad_exposure_file = os.environ.get('LCATR_BAD_EXPOSURE_FILE',
                                            bad_exposure_file)
-        print("reading set of bad exposures from", bad_exposure_file)
-        sys.stdout.flush()
         if bad_exposure_file is None:
             self.bad_exposures = set()
         else:
