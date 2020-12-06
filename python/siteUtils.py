@@ -459,22 +459,52 @@ def datacatalog_glob(pattern, testtype=None, imgtype=None, description=None,
     return file_list
 
 
+class BadExposureChecker:
+    """
+    Class to keep track of known bad exposures.
+    """
+    def __init__(self, bad_exposure_file=None):
+        """
+        Get the set of bad exposures from the bad_exposure_file.
+        """
+        bad_exposure_file = os.environ.get('LCATR_BAD_EXPOSURE_FILE',
+                                           bad_exposure_file)
+        if bad_exposure_file is None:
+            self.bad_exposures = set()
+        else:
+            with open(bad_exposure_file) as fd:
+                self.bad_exposures = set([_.strip() for _ in fd])
+
+    def is_bad(self, fits_file):
+        """
+        Check if a fits_file named, e.g.,
+        'MC_C_20201112_000153_R22_S01.fits' is in the set of bad
+        exposures based on the exposure name, i.e., 'MC_C_20201112_000153'.
+        """
+        exposure = os.path.basename(fits_file).split('_R')[0]
+        return exposure in self.bad_exposures
+
+
 def get_scratch_files(file_list, default_root='/scratch'):
     if file_list is None:
         return []
+
+    bad_exposure_checker = BadExposureChecker()
+    my_file_list = [_ for _ in file_list if not bad_exposure_checker.is_bad(_)]
+
     run_number = getRunNumber()
     scratch_root = os.environ.get('LCATR_SCRATCH_DIR', default_root)
     scratch_dir = os.path.join(scratch_root, 'bot_data', str(run_number))
     if not os.path.isdir(scratch_dir):
-        return file_list
+        return my_file_list
     final_list = []
-    for item in file_list:
+    for item in my_file_list:
         folder = os.path.basename(os.path.dirname(item))
         candidate_file = os.path.join(scratch_dir, folder,
                                       os.path.basename(item))
         if os.path.isfile(candidate_file):
             final_list.append(candidate_file)
-        else:
+        elif os.path.isfile(item):
             final_list.append(item)
     return final_list
 
