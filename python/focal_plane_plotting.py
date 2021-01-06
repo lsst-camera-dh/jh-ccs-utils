@@ -32,7 +32,7 @@ def get_amp_patches(det, amps=None):
     list of matplotlib.patches.Rectangle objects
     """
     transform = det.getTransform(cameraGeom.PIXELS, cameraGeom.FOCAL_PLANE)
-    bbox = det['C01'].getBBox()
+    bbox = list(det)[0].getBBox()
     dy, dx = bbox.getHeight(), bbox.getWidth()
     patches = []
     for amp in det:
