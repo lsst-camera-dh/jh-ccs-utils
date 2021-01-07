@@ -122,7 +122,7 @@ class ETResults(dict):
     entry.
     """
     amp_names = 'C10 C11 C12 C13 C14 C15 C16 C17 C07 C06 C05 C04 C03 C02 C01 C00'.split()
-    wf_amp_names = 'C00 C01 C02 C03 C04 C05 C06 C07'.split()
+    wf_amp_names = 'C10 C11 C12 C13 C14 C15 C16 C17'.split()
     def __init__(self, run, user='ccs', prodServer=True):
         """
         Parameters
