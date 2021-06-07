@@ -10,6 +10,8 @@ import pickle
 import fnmatch
 import warnings
 import subprocess
+from astropy.io import fits
+import numpy as np
 import pandas as pd
 from collections import OrderedDict, defaultdict
 import json
@@ -509,6 +511,21 @@ def get_scratch_files(file_list, default_root='/scratch'):
     return final_list
 
 
+def remove_corrupted_frames(frame_list, min_pix=18000):
+    """
+    Remove frames that are identified as corrupted, i.e., those with pixel
+    values < min_pix in any image extension.  Return a list of candidate
+    "good" frames.
+    """
+    good_frames = []
+    for item in frame_list:
+        with fits.open(item) as hdus:
+            amps = list(range(1, 17)) if len(hdus) > 16 else list(range(1, 9))
+            if all(np.min(hdus[amp].data) > min_pix for amp in amps):
+                good_frames.append(item)
+    return good_frames
+
+
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
                     sort=False, user='ccs', acq_jobname=None, verbose=True):
     infile = 'hj_fp_server.pkl'
@@ -540,6 +557,9 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
 
     if sort:
         file_list = sorted(file_list)
+
+    if acq_jobname is not None:
+        file_list = remove_corrupted_frames(file_list)
 
     if verbose:
         print_file_list(description, file_list)
