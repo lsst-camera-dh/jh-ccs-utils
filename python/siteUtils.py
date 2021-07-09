@@ -517,6 +517,8 @@ def remove_corrupted_frames(frame_list, min_pix=18000):
     values < min_pix in any image extension.  Return a list of candidate
     "good" frames.
     """
+    if getJobName() == 'scan_mode_analysis_BOT':
+        return frame_list
     good_frames = []
     for item in frame_list:
         with fits.open(item) as hdus:
