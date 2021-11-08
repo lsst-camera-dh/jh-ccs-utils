@@ -511,11 +511,13 @@ def get_scratch_files(file_list, default_root='/scratch'):
     return final_list
 
 
-def remove_corrupted_frames(frame_list, min_pix=18000):
+def remove_corrupted_frames(frame_list, min_pix=None, max_pix=None):
     """
-    Remove frames that are identified as corrupted, i.e., those with pixel
-    values < min_pix in any image extension.  Return a list of candidate
-    "good" frames.
+    Remove frames that are identified as corrupted, i.e., those with
+    pixel values < min_pix or values > max_pix in any image
+    extension. If min_pix or max_pix is None, then don't apply the
+    corresponding cut.  Return a list of candidate "good" frames.
+    Scan mode data are not processed by this filtering.
     """
     if getJobName() == 'scan_mode_analysis_BOT':
         return frame_list
@@ -523,7 +525,9 @@ def remove_corrupted_frames(frame_list, min_pix=18000):
     for item in frame_list:
         with fits.open(item) as hdus:
             amps = list(range(1, 17)) if len(hdus) > 16 else list(range(1, 9))
-            if all(np.min(hdus[amp].data) > min_pix for amp in amps):
+            if all((min_pix is None or np.min(hdus[amp].data) >= min_pix) and
+                   (max_pix is None or np.max(hdus[amp].data) <= max_pix)
+                   for amp in amps):
                 good_frames.append(item)
     return good_frames
 
@@ -561,7 +565,12 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
         file_list = sorted(file_list)
 
     if acq_jobname is not None:
-        file_list = remove_corrupted_frames(file_list)
+        min_pix = os.environ.get('LCATR_VALID_PIX_LOWER_BOUND', None)
+        min_pix = int(min_pix) if min_pix is not None else min_pix
+        max_pix = os.environ.get('LCATR_VALID_PIX_UPPER_BOUND', None)
+        max_pix = int(max_pix) if max_pix is not None else max_pix
+        file_list = remove_corrupted_frames(file_list, min_pix=min_pix,
+                                            max_pix=max_pix)
 
     if verbose:
         print_file_list(description, file_list)
