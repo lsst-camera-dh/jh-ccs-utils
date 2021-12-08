@@ -230,6 +230,13 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         camera = ImsimMapper().camera
     plot_amp_boundaries(ax, camera=camera)
     if z_range is None:
+        z_range_values = []
+        for _ in amp_data.values():
+            z_range_values.extend(_.values())
+        if use_log10:
+            z_range_values = [np.log10(_) for _ in z_range_values if _ > 0]
+        z_range = min(z_range_values), max(z_range_values)
+    elif z_range == 'clipped_autoscale':
         z_range = get_median_nsigma_range(amp_data, nsigma=nsigma,
                                           use_log10=use_log10)
     for det_name, amp_values in amp_data.items():
