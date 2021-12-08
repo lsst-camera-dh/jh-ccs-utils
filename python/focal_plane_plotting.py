@@ -7,10 +7,11 @@ from matplotlib.patches import Rectangle
 import numpy as np
 import lsst.geom as lsstGeom
 from lsst.afw import cameraGeom
+import lsst.afw.math as afwMath
 from lsst.obs.lsst.imsim import ImsimMapper
 
 __all__ = ['plot_amp_boundaries', 'plot_det', 'plot_focal_plane',
-           'hist_amp_data']
+           'hist_amp_data', 'get_median_nsigma_range']
 
 
 def get_amp_patches(det, amps=None):
@@ -138,10 +139,46 @@ def plot_det(ax, det, amp_values, cm=plt.cm.hot, z_range=None, use_log10=False):
     ax.add_collection(pc)
 
 
+def get_median_nsigma_range(amp_data, nsigma=4, use_log10=False):
+    """
+    Use a clipped stdev to compute the range of amp_data appropriate
+    for plotting as a full focal plane mosaic or as a histogram of
+    per-amp values.  The returned range will be
+    (median - nsigma*stdev_clip, median + nsigma*stdev_clip).
+
+    Parameters
+    ----------
+    amp_data: dict of dict of floats
+        Dictionary of dictionary of amplifier values to render,
+        keyed by detector name, e.g., 'R01_S00' and then by channel ID,
+        e.g., 'C00'.
+    nsigma: float [4]
+        Number of sigma to use for computing the plotting range.
+    use_log10: bool [False]
+        If True, then use the log10 of the amp_data values, excluding
+        non-positive values.
+
+    Returns
+    -------
+    (float, float)
+    """
+    amp_values = []
+    for _ in amp_data.values():
+        amp_values.extend(_.values())
+    amp_values = np.array(amp_values, dtype=np.float64)
+    if use_log10:
+        amp_values = np.array([np.log10(_) for _ in amp_values if _ > 0])
+    stats = afwMath.makeStatistics(amp_values,
+                                   afwMath.MEDIAN | afwMath.STDEVCLIP)
+    median = stats.getValue(afwMath.MEDIAN)
+    stdev = stats.getValue(afwMath.STDEVCLIP)
+    return (median - nsigma*stdev, median + nsigma*stdev)
+
+
 def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
                      x_range=(-325, 325), y_range=(-325, 325),
                      z_range=None, use_log10=False, scale_factor='1',
-                     title=''):
+                     title='', nsigma=4):
     """
     Make a "heat map" plot of the focalplane using per-amplifier values.
 
@@ -168,7 +205,8 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         for the color map.  Values are mapped using
         max(0, min(1, (amp_value - z_range[0])/(z_range[1] - z_range[0])))
         If None, then use
-        z_range = (min(amp_values.values()), max(amp_values.values()))
+        z_range = get_median_nsigma_range(amp_data, nsigma=nsigma,
+                                          use_log10=use_log10)
     use_log10: bool [False]
         If True, then use log10(amp_value) for positive amp_value.  For
         non-positive amp_value, don't render the amp color.
@@ -180,6 +218,9 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         This is not used if use_log10 == True.
     title: str ['']
         Title to apply to the plot.
+    nsigma: float [5]
+        Number of sigma to apply to clipped stdev for an "autoscaled"
+        z_range, i.e., [median - nsigm*stdev_clip, median + nsigm*stdev_clip].
 
     Returns
     -------
@@ -189,12 +230,8 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         camera = ImsimMapper().camera
     plot_amp_boundaries(ax, camera=camera)
     if z_range is None:
-        z_range_values = []
-        for _ in amp_data.values():
-            z_range_values.extend(_.values())
-        if use_log10:
-            z_range_values = [np.log10(_) for _ in z_range_values if _ > 0]
-        z_range = min(z_range_values), max(z_range_values)
+        z_range = get_median_nsigma_range(amp_data, nsigma=nsigma,
+                                          use_log10=use_log10)
     for det_name, amp_values in amp_data.items():
         plot_det(ax, camera[det_name], amp_values, cm=cm, z_range=z_range,
                  use_log10=use_log10)
