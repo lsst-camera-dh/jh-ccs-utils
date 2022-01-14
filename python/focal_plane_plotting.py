@@ -218,7 +218,7 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         This is not used if use_log10 == True.
     title: str ['']
         Title to apply to the plot.
-    nsigma: float [5]
+    nsigma: float [4]
         Number of sigma to apply to clipped stdev for an "autoscaled"
         z_range, i.e., [median - nsigm*stdev_clip, median + nsigm*stdev_clip].
 
