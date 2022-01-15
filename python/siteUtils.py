@@ -549,6 +549,14 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
                          flat_pairs_BOT=get_analysis_run('linearity'),
                          nonlinearity_BOT=get_analysis_run('nonlinearity'))
 
+    # Avoid run values not in the eT db:
+    remove = []
+    for key, value in analysis_runs.items():
+        if value not in HJ_FILEPATH_SERVER.resp:
+            remove.append(key)
+    for key in remove:
+        analysis_runs.pop(key)
+
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
     elif jobname in analysis_runs and analysis_runs[jobname] is not None:
