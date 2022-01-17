@@ -533,7 +533,8 @@ def remove_corrupted_frames(frame_list, min_pix=None, max_pix=None):
 
 
 def dependency_glob(pattern, jobname=None, paths=None, description=None,
-                    sort=False, user='ccs', acq_jobname=None, verbose=True):
+                    sort=False, user='ccs', acq_jobname=None, verbose=True,
+                    use_hj_fp_server=True):
     infile = 'hj_fp_server.pkl'
     if os.path.isfile(infile):
         with open(infile, 'rb') as fd:
@@ -559,7 +560,8 @@ def dependency_glob(pattern, jobname=None, paths=None, description=None,
 
     if acq_jobname is not None and HJ_FILEPATH_SERVER.acq_run is not None:
         file_list = HJ_FILEPATH_SERVER.get_files(acq_jobname, pattern)
-    elif jobname in analysis_runs and analysis_runs[jobname] is not None:
+    elif (jobname in analysis_runs and analysis_runs[jobname] is not None
+          and use_hj_fp_server):
         file_list = HJ_FILEPATH_SERVER.get_files(jobname, pattern,
                                                  run=analysis_runs[jobname])
     else:
